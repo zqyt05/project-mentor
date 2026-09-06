@@ -1,0 +1,10 @@
+# 依赖将在 M1 阶段2（搭建后端虚拟环境）时用 uv 锁定具体版本
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic
+pydantic-settings
+python-dotenv
+langchain
+langchain-openai
+httpx

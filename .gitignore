@@ -1,0 +1,29 @@
+# --- 环境变量 / 敏感信息 ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+*.db
+*.sqlite3
+.pytest_cache/
+.mypy_cache/
+
+# --- Node / 前端 ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# --- IDE / 系统 ---
+.vscode/
+.idea/
+.DS_Store
+*.log
