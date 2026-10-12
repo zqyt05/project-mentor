@@ -1,10 +1,21 @@
-# 依赖将在 M1 阶段2（搭建后端虚拟环境）时用 uv 锁定具体版本
-fastapi
-uvicorn[standard]
-sqlalchemy
-pydantic
-pydantic-settings
-python-dotenv
-langchain
-langchain-openai
-httpx
+# ProjectMentor 后端依赖（Python 3.11）
+# 版本为当前环境已验证可用的锁定版本，保证可复现安装
+
+# --- Web 框架 ---
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+
+# --- 数据库 ORM ---
+sqlalchemy==2.1.4
+
+# --- 数据校验与配置管理 ---
+pydantic==2.14.1
+pydantic-settings==2.15.0
+python-dotenv==1.2.4
+
+# --- AI 编排（LangChain + DeepSeek）---
+langchain==1.4.4
+langchain-openai==1.7.1
+
+# --- HTTP 客户端（GitHub REST API v3）---
+httpx==0.28.1
