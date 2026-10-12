@@ -1,0 +1,18 @@
+# pnpm 配置（pnpm 10+ 不再读取 package.json 中的 pnpm 字段）
+#
+# allowBuilds：允许执行安装脚本的依赖白名单。
+#   esbuild 需要执行安装脚本以放置平台二进制文件。
+#
+# overrides：把 rollup 替换为 WebAssembly 版本。
+#   背景：部分 macOS 环境下 Node 官方二进制启用了 Hardened Runtime（library validation），
+#   而 rollup 的 native addon 为 ad-hoc 签名，TeamID 不匹配会导致 dlopen 失败
+#   （ERR_DLOPEN_FAILED / "different Team IDs"）。wasm 版本是官方提供的等价替代实现，
+#   接口完全兼容，可绕开该平台限制。
+allowBuilds:
+  esbuild: true
+
+onlyBuiltDependencies:
+  - esbuild
+
+overrides:
+  rollup: npm:@rollup/wasm-node@^4.64.5
