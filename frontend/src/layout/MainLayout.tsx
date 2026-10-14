@@ -12,8 +12,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation, useParams } from 'react-router-dom'
-import { Spin } from 'antd'
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Button, Result, Spin } from 'antd'
 import TopBar from '@/layout/TopBar'
 import SideMenu from '@/layout/SideMenu'
 import ChatPanel from '@/layout/ChatPanel'
@@ -44,6 +44,7 @@ function loadPanePercent(): number {
 export default function MainLayout() {
   const { projectId } = useParams<{ projectId: string }>()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const project = useAppStore((state) => state.project)
   const setProject = useAppStore((state) => state.setProject)
@@ -53,6 +54,8 @@ export default function MainLayout() {
   // ---------- 可拖拽分栏 ----------
   const [leftPercent, setLeftPercent] = useState(loadPanePercent)
   const [dragging, setDragging] = useState(false)
+  // 项目详情加载失败时的提示（避免页面永远停在 loading）
+  const [loadError, setLoadError] = useState<string | null>(null)
   const draggingRef = useRef(false)
 
   // 拖拽期间监听全局鼠标事件：指针移出把手甚至移出窗口时也能继续跟手
@@ -101,11 +104,13 @@ export default function MainLayout() {
     if (!parsedId) {
       setProject(null)
       setActiveTaskId(null)
+      setLoadError(null)
       return
     }
     // 同一个项目内切换分区时无需重复拉取
     if (project?.id === parsedId) return
 
+    setLoadError(null)
     projectApi
       .detail(parsedId)
       .then((detail) => {
@@ -115,7 +120,9 @@ export default function MainLayout() {
         setActiveTaskId(detail.progress?.current_task_id ?? detail.tasks[0]?.id ?? null)
       })
       .catch(() => {
-        /* 错误提示已由 axios 拦截器统一处理 */
+        // 必须落一个错误态：否则页面会永远停在 loading，
+        // 用户既看不到失败原因，也没有回到首页的出口
+        if (!cancelled) setLoadError('项目加载失败，可能已被删除')
       })
 
     return () => {
@@ -139,7 +146,20 @@ export default function MainLayout() {
         <main className="pane-main">
           <SideMenu hasProject={hasProject} />
           <section className="pane-main-content">
-            {hasProject && !project ? (
+            {hasProject && loadError ? (
+              <div className="pane-loading">
+                <Result
+                  status="warning"
+                  title={loadError}
+                  subTitle="请返回首页重新选择，或从历史项目中打开一个存在的项目。"
+                  extra={
+                    <Button type="primary" onClick={() => navigate('/history')}>
+                      查看历史项目
+                    </Button>
+                  }
+                />
+              </div>
+            ) : hasProject && !project ? (
               <div className="pane-loading">
                 <Spin size="large" tip="正在加载项目数据…">
                   <div style={{ height: 80 }} />
