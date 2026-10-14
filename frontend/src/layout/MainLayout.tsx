@@ -1,14 +1,17 @@
 /**
  * 全局页面框架（PRD 模块 5 · 全局导航与状态管理）。
  *
- * 固定左右分栏，全站保持一致：
- * - 左侧主任务窗口（约 70%）：侧边菜单 + 内容区，纯展示与任务操作，内容静态稳定
- * - 右侧独立答疑窗口（约 30%）：全局常驻，随主窗口内容自动切换上下文
+ * 左右分栏，全站保持一致：
+ * - 左侧主任务窗口（默认约 70%）：侧边菜单 + 内容区，纯展示与任务操作，内容静态稳定
+ * - 右侧独立答疑窗口（默认约 30%）：全局常驻，随主窗口内容自动切换上下文
+ *
+ * 分栏比例可通过中间的把手拖拽调整，并记住用户的选择（localStorage）。
+ * 窄屏（≤1100px）下改为上下堆叠，此时把手隐藏、宽度设置不生效。
  *
  * 同时负责把路由参数与全局 store 对齐（当前项目、当前分区）。
  */
 
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { Spin } from 'antd'
 import TopBar from '@/layout/TopBar'
@@ -24,6 +27,20 @@ function resolveMainView(pathname: string): MainView {
   return 'overview'
 }
 
+/** 左侧窗口宽度的取值范围（百分比）与默认值 */
+const PANE_MIN = 40
+const PANE_MAX = 82
+const PANE_DEFAULT = 70
+const PANE_STORAGE_KEY = 'projectmentor.pane-left-percent'
+
+/** 读取用户上次设定的分栏比例 */
+function loadPanePercent(): number {
+  const raw = window.localStorage.getItem(PANE_STORAGE_KEY)
+  const value = raw ? Number(raw) : Number.NaN
+  if (Number.isNaN(value)) return PANE_DEFAULT
+  return Math.min(PANE_MAX, Math.max(PANE_MIN, value))
+}
+
 export default function MainLayout() {
   const { projectId } = useParams<{ projectId: string }>()
   const location = useLocation()
@@ -32,6 +49,48 @@ export default function MainLayout() {
   const setProject = useAppStore((state) => state.setProject)
   const setMainView = useAppStore((state) => state.setMainView)
   const setActiveTaskId = useAppStore((state) => state.setActiveTaskId)
+
+  // ---------- 可拖拽分栏 ----------
+  const [leftPercent, setLeftPercent] = useState(loadPanePercent)
+  const [dragging, setDragging] = useState(false)
+  const draggingRef = useRef(false)
+
+  // 拖拽期间监听全局鼠标事件：指针移出把手甚至移出窗口时也能继续跟手
+  useEffect(() => {
+    const onMove = (event: MouseEvent) => {
+      if (!draggingRef.current) return
+      const percent = (event.clientX / window.innerWidth) * 100
+      setLeftPercent(Math.min(PANE_MAX, Math.max(PANE_MIN, percent)))
+    }
+    const onUp = () => {
+      if (!draggingRef.current) return
+      draggingRef.current = false
+      setDragging(false)
+      document.body.classList.remove('pane-resizing')
+    }
+
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      document.body.classList.remove('pane-resizing')
+    }
+  }, [])
+
+  // 记住用户偏好
+  useEffect(() => {
+    window.localStorage.setItem(PANE_STORAGE_KEY, String(Math.round(leftPercent)))
+  }, [leftPercent])
+
+  const startDrag = useCallback(() => {
+    draggingRef.current = true
+    setDragging(true)
+    document.body.classList.add('pane-resizing')
+  }, [])
+
+  /** 双击把手恢复默认比例 */
+  const resetDrag = useCallback(() => setLeftPercent(PANE_DEFAULT), [])
 
   const parsedId = projectId ? Number(projectId) : null
 
@@ -75,7 +134,7 @@ export default function MainLayout() {
     <div className="app-shell">
       <TopBar />
 
-      <div className="app-body">
+      <div className="app-body" style={{ '--np-pane-main': `${leftPercent}%` } as React.CSSProperties}>
         {/* 左侧：主任务窗口（约 70%） */}
         <main className="pane-main">
           <SideMenu hasProject={hasProject} />
@@ -91,6 +150,20 @@ export default function MainLayout() {
             )}
           </section>
         </main>
+
+        {/* 可拖拽分栏把手 */}
+        <div
+          className={`pane-resizer ${dragging ? 'pane-resizer-dragging' : ''}`}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            startDrag()
+          }}
+          onDoubleClick={resetDrag}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="拖拽调整左右窗口宽度，双击恢复默认"
+          title="拖拽调整宽度 · 双击恢复默认"
+        />
 
         {/* 右侧：独立答疑子窗口（约 30%），全局常驻 */}
         <ChatPanel />
