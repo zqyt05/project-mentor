@@ -17,6 +17,7 @@
 - [界面截图](#界面截图)
 - [技术栈](#技术栈)
 - [快速启动](#快速启动)
+- [开发与测试](#开发与测试)
 - [项目结构](#项目结构)
 - [架构说明](#架构说明)
 - [API 一览](#api-一览)
@@ -246,13 +247,62 @@ pnpm preview        # 本地预览构建产物
 
 ---
 
+## 开发与测试
+
+### 后端单元测试
+
+测试全部**离线运行**，不调用 DeepSeek 与 GitHub，因此在没有 API Key 的环境（例如 CI）也能通过。
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python -m pytest -v
+```
+
+覆盖的是**最容易在重构中静默失效的确定性逻辑**：
+
+| 测试文件 | 盯住什么 |
+| --- | --- |
+| `test_json_extraction.py` | LLM 输出的五重容错解析（代码块、前后废话、尾逗号、裸控制字符、截断） |
+| `test_task_workflow.py` | DDL 累加计算、顺序门禁 `locked`、进度统计边界（0 任务 / 部分完成 / 全完成） |
+| `test_api_contract.py` | 所有接口与错误都返回统一的 `{code, message, data}` 结构 |
+
+> AI 相关链路（Prompt 效果、模型输出质量）不适合用单测覆盖，
+> 建议用真实 API 跑一遍端到端流程来验证，而不是写 mock 测试。
+
+### 前端检查
+
+```bash
+cd frontend
+pnpm typecheck      # TypeScript 类型检查
+pnpm lint           # ESLint
+pnpm build          # 生产构建
+```
+
+### 持续集成
+
+`.github/workflows/ci.yml` 会在每次 push 与 PR 时自动执行上面的全部检查
+（后端导入检查 + 单测；前端类型检查 + Lint + 构建）。
+
+### 数据库文件位置
+
+`DATABASE_URL` 默认为**锚定 `backend/` 目录的绝对路径**，因此无论从哪个目录启动后端，
+数据库都落在 `backend/projectmentor.db`，不会出现"数据跑错地方"的问题。
+
+重置数据：停止后端 → 删除该文件 → 重启后端（会自动重建空表）。
+
+---
+
 ## 项目结构
 
 ```
 ProjectMentor/
 ├── README.md                          # 项目说明、快速启动、架构介绍
+├── LICENSE                            # MIT 协议
 ├── .env.example                       # 环境变量示例（不含真实密钥）
 ├── .gitignore
+├── .github/workflows/ci.yml           # CI：后端单测 + 前端类型检查/Lint/构建
 ├── scripts/                           # 一键启动脚本
 │   ├── start-backend.sh               # 自动定位虚拟环境并启动 FastAPI
 │   └── start-frontend.sh              # 自动定位 Node/pnpm、装依赖并启动 Vite
@@ -287,7 +337,14 @@ ProjectMentor/
 │   │   │   ├── chat_answer.txt        # 场景化答疑
 │   │   │   └── feynman_review.txt     # 费曼复盘
 │   │   └── utils/response.py          # 统一响应格式与全局异常处理
-│   ├── requirements.txt
+│   ├── tests/                         # 单元测试（全部离线，不依赖 API Key）
+│   │   ├── conftest.py                # 内存 SQLite 夹具
+│   │   ├── test_json_extraction.py    # LLM 输出容错解析
+│   │   ├── test_task_workflow.py      # DDL 累加 / 顺序门禁 / 进度计算
+│   │   └── test_api_contract.py       # 统一响应格式与异常处理
+│   ├── requirements.txt               # 运行时依赖
+│   ├── requirements-dev.txt           # 开发依赖（pytest）
+│   ├── pytest.ini
 │   └── .env                           # 本地环境变量（已 gitignore）
 ├── frontend/                          # 前端项目
 │   ├── src/
@@ -442,3 +499,21 @@ GitHub 专有字段（`repo_url` / `stars` / `language`）对定制项目为空�
 - PDF / 视频等多模态学习资料导入
 - 多智能体复杂编排
 - 项目收藏、搜索、历史对比
+
+---
+
+## 开源协议
+
+本项目基于 [MIT License](LICENSE) 开源，可自由使用、修改与商用，只需保留版权声明。
+
+所有依赖均为 **MIT 或 BSD-3-Clause** 等宽松协议，**不含任何 GPL/AGPL 等 copyleft 传染性协议**，
+可安全用于商业环境。
+
+---
+
+## 致谢
+
+- [DeepSeek](https://platform.deepseek.com/) —— 提供本项目所需的模型能力
+- [GitHub REST API](https://docs.github.com/rest) —— 提供开源项目检索数据源
+- [FastAPI](https://fastapi.tiangolo.com/) · [React](https://react.dev/) · [Ant Design](https://ant.design/) —— 本项目赖以构建的基础设施
+
