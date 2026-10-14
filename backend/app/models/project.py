@@ -37,7 +37,8 @@ class Project(Base, TimestampMixin):
     background: Mapped[str] = mapped_column(Text, default="", comment="项目背景")
     goals: Mapped[list] = mapped_column(JSON, default=list, comment="实战目标列表")
     core_points: Mapped[list] = mapped_column(JSON, default=list, comment="核心学习知识点")
-    deliverable: Mapped[str] = mapped_column(Text, default="", comment="最终交付物说明")
+    # 最终交付物：分条存储，前端可直接渲染为列表（比一整段文字更直观）
+    deliverables: Mapped[list] = mapped_column(JSON, default=list, comment="最终交付物清单")
     target_audience: Mapped[str] = mapped_column(Text, default="", comment="适配人群")
     pitfalls: Mapped[str] = mapped_column(Text, default="", comment="常见学习误区")
     # GitHub 项目的 README 摘要，单独存储以便前端折叠展示（展开时回链仓库地址）

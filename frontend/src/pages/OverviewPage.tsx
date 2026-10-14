@@ -16,6 +16,7 @@ import { GithubOutlined, StarFilled } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAppStore } from '@/store/useAppStore'
 import StageTimeline from '@/components/StageTimeline'
+import DeliverableList from '@/components/DeliverableList'
 import MarkdownView from '@/components/MarkdownView'
 
 const { Paragraph, Text } = Typography
@@ -208,10 +209,8 @@ export default function OverviewPage() {
 
       {/* ---------- 最终交付物 ---------- */}
       <Card size="small" title="最终交付物" className="overview-block">
-        {project.deliverable ? (
-          <Paragraph className="np-justify" style={{ marginBottom: 0 }}>
-            {project.deliverable}
-          </Paragraph>
+        {project.deliverables.length > 0 ? (
+          <DeliverableList items={project.deliverables} />
         ) : (
           <Text type="secondary">暂无交付物说明</Text>
         )}

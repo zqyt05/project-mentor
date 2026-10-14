@@ -26,7 +26,7 @@ export interface ProjectCandidate {
   background: string
   goals: string[]
   core_points: string[]
-  deliverable: string
+  deliverables: string[]
   target_audience: string
   pitfalls: string
   match_reason: string
@@ -69,7 +69,6 @@ export interface Task {
   status: TaskStatus
   started_at: string | null
   completed_at: string | null
-  locked: boolean
 }
 
 /** 阶段 */
@@ -92,7 +91,7 @@ export interface ProjectBrief {
   difficulty: string
   status: ProjectStatus
   summary: string
-  deliverable: string
+  deliverables: string[]
   repo_url: string | null
   repo_full_name: string | null
   stars: number | null
@@ -166,7 +165,7 @@ export interface CompleteTaskResult {
   task: Task
   progress: Progress
   project_status: ProjectStatus
-  unlocked_task: Task | null
+  next_task: Task | null
 }
 
 /** 开始任务响应 */

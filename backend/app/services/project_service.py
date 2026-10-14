@@ -93,7 +93,9 @@ def _candidate_from_repo(repo: GithubRepo, generated: dict[str, Any], difficulty
         background=str(generated.get("background", "") or repo.description or ""),
         goals=[str(item) for item in (generated.get("goals") or [])][:4],
         core_points=[str(item) for item in (generated.get("core_points") or [])][:5],
-        deliverable=str(generated.get("deliverable", "") or ""),
+        deliverables=[
+            str(item) for item in (generated.get("deliverables") or []) if str(item).strip()
+        ],
         target_audience=str(generated.get("target_audience", "") or ""),
         pitfalls=str(generated.get("pitfalls", "") or ""),
         match_reason=(
@@ -125,8 +127,11 @@ async def match_github_projects(
         logger.info("关键词检索无结果，使用方向原文重试：%s", domain)
         repos = await github.search(domain, language=None)
 
-    if len(repos) < 3:
-        logger.info("优质候选项目不足 3 个（实际 %s 个），触发降级", len(repos))
+    # 注意：这里不再因为「少于 3 个」就直接放弃。
+    # 检索到几个就先给几个，数量不足的部分由调用方用 AI 定制项目补齐，
+    # 避免明明有 1-2 个高度相关的优质开源项目，却全部丢掉换成定制项目。
+    if not repos:
+        logger.info("未检索到符合筛选条件的开源项目：%s", keywords)
         return []
 
     repo_pool = repos[: settings.GITHUB_CANDIDATE_LIMIT]
@@ -172,12 +177,21 @@ async def match_github_projects(
 # ======================================================================
 
 
-async def generate_custom_projects(domain: str, difficulty: str) -> list[ProjectCandidate]:
-    """路径 B：调用 LLM 生成定制化实战项目。"""
+async def generate_custom_projects(
+    domain: str, difficulty: str, count: int = _CUSTOM_RESULT_COUNT
+) -> list[ProjectCandidate]:
+    """路径 B：调用 LLM 生成定制化实战项目。
+
+    :param count: 需要生成的项目数量。技术类方向若 GitHub 优质项目不足时，
+                  会用本函数补齐差额，因此数量是可变的。
+    """
+    count = max(1, min(count, _CUSTOM_RESULT_COUNT))
     llm = get_llm_service()
     payload = await llm.acomplete_json(
         system_prompt="你是实战派学习导师，擅长设计小而实的实战项目，只输出 JSON。",
-        user_prompt=render_prompt("custom_project", domain=domain, difficulty=difficulty),
+        user_prompt=render_prompt(
+            "custom_project", domain=domain, difficulty=difficulty, count=str(count)
+        ),
     )
 
     raw_projects = payload.get("projects", []) if isinstance(payload, dict) else []
@@ -194,7 +208,9 @@ async def generate_custom_projects(domain: str, difficulty: str) -> list[Project
                 background=str(item.get("background", "") or ""),
                 goals=[str(goal) for goal in (item.get("goals") or [])][:4],
                 core_points=[str(point) for point in (item.get("core_points") or [])][:5],
-                deliverable=str(item.get("deliverable", "") or ""),
+                deliverables=[
+                    str(point) for point in (item.get("deliverables") or []) if str(point).strip()
+                ],
                 target_audience=str(item.get("target_audience", "") or ""),
                 pitfalls=str(item.get("pitfalls", "") or ""),
                 match_reason="AI 定制项目 · 交付物导向",
@@ -204,7 +220,7 @@ async def generate_custom_projects(domain: str, difficulty: str) -> list[Project
     if not candidates:
         raise BusinessError("AI 未能生成有效项目，请调整学习方向描述后重试")
 
-    return candidates[:_CUSTOM_RESULT_COUNT]
+    return candidates[:count]
 
 
 # ======================================================================
@@ -218,26 +234,43 @@ async def match_projects(domain: str, difficulty: str) -> ProjectMatchResponse:
 
     if route["category"] == "technical":
         keywords = route["search_keywords"] or domain
-        candidates = await match_github_projects(
+        github_candidates = await match_github_projects(
             domain, difficulty, keywords, route["language"]
         )
-        if candidates:
+
+        # GitHub 优质项目不足时，用 AI 定制项目补齐差额，而不是整体丢弃。
+        # 这样即使只找到 1-2 个高度相关的开源项目，也仍然会呈现给用户。
+        shortage = settings.GITHUB_MIN_QUALIFIED - len(github_candidates)
+        if shortage <= 0:
             return ProjectMatchResponse(
                 path=ProjectSource.GITHUB,
                 route_reason=(
                     f"「{domain}」属于技术开发类（{route['reason']}），"
-                    f"已为你检索到 {len(candidates)} 个优质开源实战项目"
+                    f"已为你检索到 {len(github_candidates)} 个优质开源实战项目"
                 ),
-                projects=candidates,
+                projects=github_candidates,
             )
-        # 降级：GitHub 优质项目不足
-        custom = await generate_custom_projects(domain, difficulty)
+
+        custom = await generate_custom_projects(domain, difficulty, count=shortage)
+
+        if github_candidates:
+            return ProjectMatchResponse(
+                path=ProjectSource.GITHUB,
+                route_reason=(
+                    f"「{domain}」属于技术开发类（{route['reason']}）。"
+                    f"GitHub 上符合「Star > 500、近一年有更新、README 完整」的优质开源项目"
+                    f"只有 {len(github_candidates)} 个，不足 {settings.GITHUB_MIN_QUALIFIED} 个，"
+                    f"已用 {len(custom)} 个 AI 定制实战项目补齐差额"
+                ),
+                projects=github_candidates + custom,
+            )
+
         return ProjectMatchResponse(
             path=ProjectSource.CUSTOM,
             route_reason=(
                 f"「{domain}」属于技术开发类，但 GitHub 上符合"
-                f"「Star > 500、近一年有更新、README 完整」的优质项目不足 3 个，"
-                f"已自动降级为 AI 定制实战项目"
+                f"「Star > 500、近一年有更新、README 完整」的优质开源项目为 0 个，"
+                f"已改为全部由 AI 定制实战项目"
             ),
             projects=custom,
         )
@@ -275,8 +308,8 @@ def _build_project_info(project: Project) -> str:
         lines.append(f"- 实战目标：{'；'.join(str(goal) for goal in project.goals)}")
     if project.core_points:
         lines.append(f"- 核心知识点：{'、'.join(str(point) for point in project.core_points)}")
-    if project.deliverable:
-        lines.append(f"- 最终交付物：{project.deliverable}")
+    if project.deliverables:
+        lines.append(f"- 最终交付物：{'；'.join(str(d) for d in project.deliverables)}")
     if project.repo_url:
         lines.append(f"- 开源仓库：{project.repo_url}（Star {project.stars or 0}）")
     if project.readme_digest:
@@ -372,7 +405,7 @@ async def start_project(
         background=candidate.background,
         goals=candidate.goals,
         core_points=candidate.core_points,
-        deliverable=candidate.deliverable,
+        deliverables=candidate.deliverables,
         target_audience=candidate.target_audience,
         pitfalls=candidate.pitfalls,
         repo_url=candidate.repo_url,

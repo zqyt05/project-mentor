@@ -274,6 +274,53 @@ h6 {
   min-height: 0;
 }
 
+/* ---------- 可拖拽分栏把手 ---------- */
+
+.pane-resizer {
+  flex: 0 0 7px;
+  cursor: col-resize;
+  background: var(--np-paper);
+  border-left: 1px solid var(--np-ink);
+  border-right: 1px solid var(--np-ink);
+  position: relative;
+  z-index: 6;
+  transition: background-color 0.15s;
+}
+
+.pane-resizer::after {
+  /* 居中的三条短竖线，暗示「可拖动」 */
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1px;
+  height: 34px;
+  background: var(--np-ink);
+  box-shadow:
+    -2px 0 0 var(--np-ink),
+    2px 0 0 var(--np-ink);
+}
+
+.pane-resizer:hover,
+.pane-resizer-dragging {
+  background: var(--np-ink);
+}
+
+.pane-resizer:hover::after,
+.pane-resizer-dragging::after {
+  background: var(--np-paper);
+  box-shadow:
+    -2px 0 0 var(--np-paper),
+    2px 0 0 var(--np-paper);
+}
+
+/* 拖拽过程中禁止选中文本，并保持 col-resize 光标 */
+body.pane-resizing {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
 /* ==========================================================================
    7. 报头（TopBar）
    ========================================================================== */
@@ -440,12 +487,12 @@ h6 {
 
 .pane-main {
   display: flex;
+  /* 宽度由 --np-pane-main 决定（拖拽把手会实时更新它），剩余空间归答疑窗口 */
   flex: 0 0 var(--np-pane-main);
   max-width: var(--np-pane-main);
-  min-width: 0;
+  min-width: 360px;
   background: var(--np-paper);
-  /* 垂直网格分隔线：明确且突出的结构 */
-  border-right: 1px solid var(--np-ink);
+  /* 分隔线由 .pane-resizer 提供，这里不再画，避免双线 */
 }
 
 .app-sidemenu {
@@ -498,8 +545,8 @@ h6 {
 .chat-panel {
   display: flex;
   flex-direction: column;
-  flex: 0 0 var(--np-pane-chat);
-  max-width: var(--np-pane-chat);
+  /* 占满左侧固定宽度之外的剩余空间 */
+  flex: 1 1 auto;
   min-width: 300px;
   background: var(--np-paper);
   height: 100%;
@@ -565,9 +612,43 @@ h6 {
 }
 
 .chat-quick {
+  border-bottom: 1px solid var(--np-soft);
+}
+
+/* 快速提问默认收起，避免长期占用答疑窗口的宝贵高度 */
+.chat-quick-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat-quick-toggle:hover {
+  background: var(--np-n100);
+}
+
+.chat-quick-toggle-icon {
+  font-family: var(--np-mono);
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--np-ink);
+  transition: transform 0.3s ease-in-out;
+}
+
+.chat-quick-toggle-icon-open {
+  transform: rotate(45deg);
+}
+
+.chat-quick-list {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 1px solid var(--np-soft);
+  border-top: 1px solid var(--np-soft);
 }
 
 /* 合并网格：相邻快捷按钮共享边框，避免双线 */
@@ -580,6 +661,7 @@ h6 {
   padding: 0 9px !important;
   border: none !important;
   border-right: 1px solid var(--np-soft) !important;
+  border-bottom: 1px solid var(--np-soft) !important;
   background: transparent !important;
   color: var(--np-n600) !important;
   transition: all 0.2s !important;
@@ -1398,6 +1480,43 @@ h6 {
   margin-top: 8px;
 }
 
+/* 最终交付物：分条罗列。用墨色方块作为项目符号，与整体的矩形语言一致 */
+.deliverable-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deliverable-list li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  font-family: var(--np-body);
+}
+
+.deliverable-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.44em;
+  width: 7px;
+  height: 7px;
+  background: var(--np-ink);
+}
+
+/* 单条交付物时不画符号，直接呈现文字 */
+.deliverable-list-single li {
+  padding-left: 0;
+}
+
+.deliverable-list-single li::before {
+  display: none;
+}
+
 /* 拆解进度：吸附在滚动容器底部。
    原因：匹配结果列表可能很长，若按常规流式排版，进度提示会落到首屏之外，
    用户点完按钮后看不到任何反馈。sticky 保证等待期间它始终可见。 */
@@ -1727,17 +1846,22 @@ h6 {
   color: var(--np-paper);
 }
 
+/* 注意：`:hover` 是伪类，权重与类相同，因此 `.timeline-task:hover`(0,2,0)
+   会压过 `.timeline-task-active`(0,1,0)。若不单独覆盖，悬停当前任务时底色会变浅灰，
+   而文字仍是 -active 带来的白色，出现白字配浅灰底、完全看不清的问题。
+   这里显式给「当前任务 + 悬停」一个更亮的墨色，既保留悬停反馈又保证对比度。 */
+.timeline-task-active:hover {
+  background: var(--np-n700);
+  color: var(--np-paper);
+}
+
 .timeline-task-active .timeline-task-due {
   color: var(--np-n400);
 }
 
 .timeline-task-locked {
-  cursor: not-allowed;
+  cursor: pointer;
   color: var(--np-n400);
-}
-
-.timeline-task-locked:hover {
-  background: transparent;
 }
 
 .timeline-task-name {
@@ -1871,6 +1995,22 @@ h6 {
 .task-card-active {
   border-left: 4px solid var(--np-red);
   padding-left: 12px;
+}
+
+/* 从时间线跳转过来时的短暂高亮，帮助用户定位到目标任务 */
+@keyframes np-task-flash {
+  0%,
+  100% {
+    background: var(--np-paper);
+  }
+  15%,
+  60% {
+    background: var(--np-n200);
+  }
+}
+
+.task-card-flash {
+  animation: np-task-flash 1.6s ease-out;
 }
 
 .task-card-done {
@@ -2041,6 +2181,12 @@ h6 {
     flex: 0 0 auto;
     max-width: 100%;
     width: 100%;
+    min-width: 0;
+  }
+
+  /* 竖向堆叠时拖拽把手没有意义，隐藏（宽度切换由 JS 按视口判断） */
+  .pane-resizer {
+    display: none;
   }
 
   .pane-main {

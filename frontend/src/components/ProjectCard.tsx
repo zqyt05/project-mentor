@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import { Button, Card, Space, Tag, Typography } from 'antd'
 import { GithubOutlined, StarFilled } from '@ant-design/icons'
+import DeliverableList from '@/components/DeliverableList'
 import type { ProjectCandidate } from '@/api/types'
 
 const { Paragraph, Text, Title } = Typography
@@ -72,12 +73,10 @@ export default function ProjectCard({
         </div>
       )}
 
-      {project.deliverable && (
+      {project.deliverables.length > 0 && (
         <div className="project-card-block" style={{ marginTop: 10 }}>
           <span className="np-label np-label-ink">最终交付物</span>
-          <Paragraph style={{ margin: '5px 0 0', fontSize: '0.84rem' }}>
-            {project.deliverable}
-          </Paragraph>
+          <DeliverableList items={project.deliverables} />
         </div>
       )}
 

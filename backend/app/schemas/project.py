@@ -44,7 +44,7 @@ class ProjectCandidate(BaseModel):
     background: str = Field(default="", description="项目背景")
     goals: list[str] = Field(default_factory=list, description="实战目标")
     core_points: list[str] = Field(default_factory=list, description="核心学习点（3-5 个关键词）")
-    deliverable: str = Field(default="", description="最终交付物说明")
+    deliverables: list[str] = Field(default_factory=list, description="最终交付物清单")
     target_audience: str = Field(default="", description="适配人群")
     pitfalls: str = Field(default="", description="常见学习误区")
     match_reason: str = Field(default="", description="难度匹配度 / 排序依据")
@@ -82,7 +82,7 @@ class ProjectBrief(ORMModel):
     difficulty: str
     status: str
     summary: str = ""
-    deliverable: str = ""
+    deliverables: list[str] = Field(default_factory=list)
     repo_url: str | None = None
     repo_full_name: str | None = None
     stars: int | None = None
