@@ -276,17 +276,27 @@ export default function ReviewPage() {
 
         {/* 右：AI 优化后的结果 */}
         <Col xs={24} xl={12}>
-          <Card
-            size="small"
-            title={
-              <Space>
-                AI 优化后的复盘文档
-              </Space>
-            }
-            className="review-result-card"
-            extra={
-              review && (
-                <Space size={6}>
+          <Card size="small" title="AI 优化后的复盘文档" className="review-result-card">
+            {!review ? (
+              <div className="review-empty">
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description={
+                    <span>
+                      还没有复盘结果
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        在左侧写下你的理解，提交后 AI 会在这里生成完整文档
+                      </Text>
+                    </span>
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                {/* 视图切换与复制放在标题栏下方：标题较长 + 半宽卡片时，
+                    把它们塞进 Card 的 extra 会把标题挤到重叠 */}
+                <div className="review-toolbar">
                   <Segmented
                     size="small"
                     value={resultTab}
@@ -304,31 +314,14 @@ export default function ReviewPage() {
                   >
                     一键复制
                   </Button>
-                </Space>
-              )
-            }
-          >
-            {!review ? (
-              <div className="review-empty">
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description={
-                    <span>
-                      还没有复盘结果
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        在左侧写下你的理解，提交后 AI 会在这里生成完整文档
-                      </Text>
-                    </span>
-                  }
-                />
-              </div>
-            ) : resultTab === 'document' ? (
-              <div className="review-document">
-                <MarkdownView content={review.final_content} />
-              </div>
-            ) : (
-              <div className="review-feedback">
+                </div>
+
+                {resultTab === 'document' ? (
+                  <div className="review-document">
+                    <MarkdownView content={review.final_content} />
+                  </div>
+                ) : (
+                  <div className="review-feedback">
                 <Collapse
                   defaultActiveKey={['corrections', 'supplements', 'next']}
                   ghost
@@ -402,7 +395,9 @@ export default function ReviewPage() {
                     },
                   ]}
                 />
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </Card>
         </Col>

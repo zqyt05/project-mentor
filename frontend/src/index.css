@@ -170,30 +170,6 @@ h6 {
   text-justify: inter-word;
 }
 
-/* 首字下沉 —— 编辑的权威性
-   注意：仅适用于拉丁字母正文。中文方块字做首字下沉会与上方标题挤在一起，
-   破坏行距与阅读节奏，因此中文正文不使用该类。 */
-.drop-cap::first-letter {
-  font-family: var(--np-serif);
-  font-size: 3.6rem;
-  font-weight: 900;
-  float: left;
-  line-height: 0.8;
-  margin: 0.06em 0.14em 0 0;
-  color: var(--np-ink);
-}
-
-/* 装饰性分隔线：衬线装饰符号 */
-.np-divider {
-  text-align: center;
-  font-family: var(--np-serif);
-  font-size: 1.4rem;
-  color: var(--np-n400);
-  letter-spacing: 1em;
-  padding: 1.4rem 0 1.4rem 0.6rem;
-  user-select: none;
-}
-
 /* ==========================================================================
    4. 纹理
    ========================================================================== */
@@ -213,13 +189,6 @@ h6 {
   background-size: 3px 3px;
   pointer-events: none;
   opacity: 0.5;
-}
-
-/* 半色调网点 —— 图片 / 空状态占位 */
-.np-halftone {
-  background-image: radial-gradient(#000 1px, transparent 1px);
-  background-size: 16px 16px;
-  opacity: 0.1;
 }
 
 /* ==========================================================================
@@ -276,12 +245,13 @@ h6 {
 
 /* ---------- 可拖拽分栏把手 ---------- */
 
+/* 分栏把手：默认只保留中间的握把记号，不画边框。
+   原先左右各一条 1px 线叠在一起，在页面正中形成一对平行线，是最冗余的一组线条。 */
 .pane-resizer {
-  flex: 0 0 7px;
+  flex: 0 0 9px;
   cursor: col-resize;
-  background: var(--np-paper);
-  border-left: 1px solid var(--np-ink);
-  border-right: 1px solid var(--np-ink);
+  background: transparent;
+  border: none;
   position: relative;
   z-index: 6;
   transition: background-color 0.15s;
@@ -328,8 +298,7 @@ body.pane-resizing {
 .app-topbar {
   flex: 0 0 auto;
   background: var(--np-paper);
-  /* 报头用粗线压住，是整份「报纸」的视觉锚点 */
-  border-top: 1px solid var(--np-ink);
+  /* 只用一条粗线压住报头 —— 页面顶部边缘本身已界定，再加细线是冗余装饰 */
   border-bottom: 4px solid var(--np-ink);
   z-index: 40;
 }
@@ -612,7 +581,7 @@ body.pane-resizing {
 }
 
 .chat-quick {
-  border-bottom: 1px solid var(--np-soft);
+  /* 不画底线：下方 textarea 与操作行已由 .chat-input-actions 的上边线分隔 */
 }
 
 /* 快速提问默认收起，避免长期占用答疑窗口的宝贵高度 */
@@ -661,7 +630,6 @@ body.pane-resizing {
   padding: 0 9px !important;
   border: none !important;
   border-right: 1px solid var(--np-soft) !important;
-  border-bottom: 1px solid var(--np-soft) !important;
   background: transparent !important;
   color: var(--np-n600) !important;
   transition: all 0.2s !important;
@@ -904,11 +872,27 @@ body.pane-resizing {
   padding: 0 16px !important;
 }
 
+/* 标题与 extra 共处一行时，必须允许标题被压缩，
+   否则 extra 会被挤出卡片、标题文字与按钮重叠。
+   wrap 作为兜底：空间真的不够时把 extra 折到第二行。 */
+.ant-card-head-wrapper {
+  min-width: 0 !important;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .ant-card-head-title {
   font-family: var(--np-serif);
   font-weight: 700;
   font-size: 1.02rem;
   padding: 11px 0 !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.ant-card-extra {
+  flex: 0 0 auto;
+  margin-inline-start: auto !important;
 }
 
 .ant-card-body {
@@ -1628,35 +1612,6 @@ body.pane-resizing {
   font-family: var(--np-body);
 }
 
-/* README 折叠区 */
-.readme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-  padding: 11px 16px;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--np-ink);
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.2s;
-}
-
-.readme-toggle:hover {
-  background: var(--np-n100);
-}
-
-.readme-toggle-title {
-  font-family: var(--np-sans);
-  font-size: 0.76rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--np-ink);
-}
-
 .readme-toggle-icon {
   font-family: var(--np-mono);
   font-size: 1.1rem;
@@ -1882,18 +1837,6 @@ body.pane-resizing {
 .task-overdue {
   color: var(--np-red);
   font-weight: 700;
-}
-
-/* 任务状态指示块（时间线上的方形标记） */
-.task-status-mark {
-  flex: 0 0 auto;
-  width: 9px;
-  height: 9px;
-  border: 1px solid currentColor;
-}
-
-.task-status-mark-done {
-  background: currentColor;
 }
 
 /* ==========================================================================
@@ -2139,6 +2082,19 @@ body.pane-resizing {
   max-height: 60vh;
   overflow-y: auto;
   padding-right: 4px;
+}
+
+/* 复盘结果的工具条：放在标题栏下方而不是 Card 的 extra，
+   避免标题被右侧按钮挤压重叠 */
+.review-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--np-soft);
 }
 
 .review-empty {
