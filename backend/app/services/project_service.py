@@ -97,8 +97,7 @@ def _candidate_from_repo(repo: GithubRepo, generated: dict[str, Any], difficulty
         target_audience=str(generated.get("target_audience", "") or ""),
         pitfalls=str(generated.get("pitfalls", "") or ""),
         match_reason=(
-            f"适配度 {generated.get('fit', '-')} 分 · Star {repo.stars} · "
-            f"{repo.language or '未标注语言'}"
+            f"Star {repo.stars} · {repo.language or '未标注语言'}"
         ),
         repo_url=repo.url,
         repo_full_name=repo.full_name,
@@ -280,6 +279,9 @@ def _build_project_info(project: Project) -> str:
         lines.append(f"- 最终交付物：{project.deliverable}")
     if project.repo_url:
         lines.append(f"- 开源仓库：{project.repo_url}（Star {project.stars or 0}）")
+    if project.readme_digest:
+        # 附上真实 README 内容，让拆解与答疑基于项目实况而不是仅凭仓库名猜测
+        lines.append(f"- README 摘要：\n{project.readme_digest}")
     return "\n".join(lines)
 
 
@@ -381,11 +383,10 @@ async def start_project(
     db.add(project)
     db.flush()  # 取得 project.id
 
-    # GitHub 项目：拉取真实 README 摘要，作为答疑与复盘的事实依据
+    # GitHub 项目：拉取真实 README 摘要，作为答疑与复盘的事实依据。
+    # 单独存字段（而不是拼进 background），前端可以折叠展示并回链仓库地址。
     if candidate.source == ProjectSource.GITHUB and candidate.repo_full_name:
-        readme_digest = await fetch_readme_digest(candidate.repo_full_name)
-        if readme_digest:
-            project.background = (project.background + "\n\n【README 摘要】\n" + readme_digest).strip()
+        project.readme_digest = await fetch_readme_digest(candidate.repo_full_name)
 
     stages = await decompose_project(project)
     persist_decomposition(db, project, stages)

@@ -95,6 +95,7 @@ class ProjectDetail(ProjectBrief):
     """项目详情：含完整内容与阶段任务时间线。"""
 
     background: str = ""
+    readme_digest: str = Field(default="", description="GitHub 项目 README 摘要")
     goals: list[str] = Field(default_factory=list)
     core_points: list[str] = Field(default_factory=list)
     target_audience: str = ""

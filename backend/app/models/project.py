@@ -40,6 +40,8 @@ class Project(Base, TimestampMixin):
     deliverable: Mapped[str] = mapped_column(Text, default="", comment="最终交付物说明")
     target_audience: Mapped[str] = mapped_column(Text, default="", comment="适配人群")
     pitfalls: Mapped[str] = mapped_column(Text, default="", comment="常见学习误区")
+    # GitHub 项目的 README 摘要，单独存储以便前端折叠展示（展开时回链仓库地址）
+    readme_digest: Mapped[str] = mapped_column(Text, default="", comment="README 摘要")
 
     # ===== GitHub 专有字段 =====
     repo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
