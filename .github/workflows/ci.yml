@@ -55,7 +55,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # 必须 >= 22.13：pnpm 11 内部使用了 node:sqlite 内置模块，
+          # 在 Node 20 上会以 ERR_UNKNOWN_BUILTIN_MODULE 崩溃。
+          # 该版本要求同时写在 frontend/package.json 的 engines 字段中。
+          node-version: '22'
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 

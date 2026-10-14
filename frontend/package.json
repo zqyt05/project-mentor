@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "description": "ProjectMentor —— PBL 项目制 AI 实战导师前端",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

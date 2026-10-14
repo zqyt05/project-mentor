@@ -178,7 +178,9 @@ AI 判断领域类型（技术开发类 / 通用知识类）
 #### 环境要求
 
 - Python **3.11**（PRD 强制要求；3.11.x 已验证）
-- Node.js 18+（前端构建；`pnpm` 无需全局安装）
+- Node.js **22.13+**（前端构建；`pnpm` 无需全局安装）
+  > 为什么需要 22.13：pnpm 11 内部使用了 Node 的 `node:sqlite` 内置模块，
+  > 在更早的 Node 上会以 `ERR_UNKNOWN_BUILTIN_MODULE` 崩溃。
 - 一个 DeepSeek API Key（[申请地址](https://platform.deepseek.com/api_keys)）
 - 可选：GitHub Personal Access Token（不配置也能用，但搜索速率限制更低）
 
