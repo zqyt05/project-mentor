@@ -1,19 +1,16 @@
 /**
  * 项目卡片（PRD 模块 1 · 输出）。
- * 展示：项目名称、来源标签、难度标签、简介/推荐理由、核心学习点、
- * 最终交付物；GitHub 项目额外展示仓库地址、Star 数、主要语言。
+ *
+ * 新闻纸风格：以字体排印建立层级，仅在「仓库地址 / Star 数」这类
+ * 有实际信息价值的地方保留图标，其余位置一律纯文字。
+ *
+ * 说明：不展示 AI 的适配度打分 —— 适配度只用于后端排序，
+ * 呈现给用户的是按适配度排好序的结果本身。
  */
 
-import { Button, Card, Divider, Space, Tag, Tooltip, Typography } from 'antd'
-import {
-  BookOutlined,
-  CheckCircleOutlined,
-  ExperimentOutlined,
-  GithubOutlined,
-  RocketOutlined,
-  StarFilled,
-  WarningOutlined,
-} from '@ant-design/icons'
+import { useState } from 'react'
+import { Button, Card, Space, Tag, Typography } from 'antd'
+import { GithubOutlined, StarFilled } from '@ant-design/icons'
 import type { ProjectCandidate } from '@/api/types'
 
 const { Paragraph, Text, Title } = Typography
@@ -35,111 +32,120 @@ export default function ProjectCard({
   disabled = false,
 }: ProjectCardProps) {
   const isGithub = project.source === 'github'
+  const [showMore, setShowMore] = useState(false)
+
+  /** 背景 / 适配人群 / 常见误区默认折叠，让卡片首屏保持清爽 */
+  const hasMore = Boolean(project.background || project.target_audience || project.pitfalls)
 
   return (
     <Card
       className="project-card"
-      hoverable
       title={
-        <Space size={8} wrap>
-          <Title level={5} style={{ margin: 0 }}>
+        <Space size={10} wrap>
+          <Title level={4} style={{ margin: 0, fontFamily: 'var(--np-serif)' }}>
             {project.name}
           </Title>
-          {isGithub ? (
-            <Tag icon={<GithubOutlined />} color="geekblue">
-              GitHub 开源
-            </Tag>
-          ) : (
-            <Tag icon={<BookOutlined />} color="purple">
-              AI 定制
-            </Tag>
-          )}
-          <Tag color="cyan">{project.difficulty}</Tag>
+          <Tag>{isGithub ? 'GitHub 开源' : 'AI 定制'}</Tag>
+          <Tag>{project.difficulty}</Tag>
         </Space>
       }
       extra={
         isGithub && project.stars != null ? (
-          <Tooltip title="GitHub Star 数">
-            <Text type="secondary">
-              <StarFilled style={{ color: '#faad14' }} /> {project.stars.toLocaleString()}
-            </Text>
-          </Tooltip>
+          <Text className="np-meta">
+            <StarFilled style={{ color: 'var(--np-ink)' }} /> {project.stars.toLocaleString()}
+          </Text>
         ) : null
       }
     >
-      <Paragraph type="secondary" className="project-card-summary" ellipsis={{ rows: 3 }}>
+      <Paragraph className="project-card-summary np-justify" style={{ marginBottom: 12 }}>
         {project.summary || '暂无简介'}
       </Paragraph>
 
-      {project.background && (
-        <Paragraph className="project-card-block" ellipsis={{ rows: 2 }}>
-          <Text strong>项目背景：</Text>
-          {project.background}
-        </Paragraph>
-      )}
-
-      <div className="project-card-block">
-        <Text strong>
-          <ExperimentOutlined /> 核心学习点
-        </Text>
-        <div className="project-card-tags">
-          {project.core_points.length > 0 ? (
-            project.core_points.map((point) => (
-              <Tag key={point} color="blue">
-                {point}
-              </Tag>
-            ))
-          ) : (
-            <Text type="secondary">暂无</Text>
-          )}
+      {project.core_points.length > 0 && (
+        <div className="project-card-block">
+          <span className="np-label np-label-ink">核心学习点</span>
+          <div className="project-card-tags">
+            {project.core_points.map((point) => (
+              <Tag key={point}>{point}</Tag>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {project.deliverable && (
-        <Paragraph className="project-card-block" ellipsis={{ rows: 3 }}>
-          <Text strong>
-            <CheckCircleOutlined /> 最终交付物：
-          </Text>
-          {project.deliverable}
-        </Paragraph>
+        <div className="project-card-block" style={{ marginTop: 10 }}>
+          <span className="np-label np-label-ink">最终交付物</span>
+          <Paragraph style={{ margin: '5px 0 0', fontSize: '0.84rem' }}>
+            {project.deliverable}
+          </Paragraph>
+        </div>
       )}
 
-      {project.target_audience && (
-        <Paragraph className="project-card-block" type="secondary" ellipsis={{ rows: 2 }}>
-          <Text strong>适配人群：</Text>
-          {project.target_audience}
-        </Paragraph>
-      )}
+      {/* 次要信息默认折叠：卡片首屏只保留决策必需的内容 */}
+      {hasMore && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            type="button"
+            className="readme-toggle-inline"
+            onClick={() => setShowMore((open) => !open)}
+            aria-expanded={showMore}
+          >
+            {showMore ? '收起' : '更多信息'}
+            <span className={`readme-toggle-icon ${showMore ? 'readme-toggle-icon-open' : ''}`}>
+              +
+            </span>
+          </button>
 
-      {project.pitfalls && (
-        <Paragraph className="project-card-block" type="warning" ellipsis={{ rows: 2 }}>
-          <Text strong>
-            <WarningOutlined /> 常见误区：
-          </Text>
-          {project.pitfalls}
-        </Paragraph>
+          <div className={`readme-body ${showMore ? 'readme-body-open' : 'readme-body-closed'}`}>
+            <div className="readme-body-inner">
+              <div className="project-card-extra">
+                {project.background && (
+                  <div>
+                    <span className="np-label">项目背景</span>
+                    <Paragraph type="secondary" style={{ margin: '4px 0 0', fontSize: '0.82rem' }}>
+                      {project.background}
+                    </Paragraph>
+                  </div>
+                )}
+                {project.target_audience && (
+                  <div>
+                    <span className="np-label">适配人群</span>
+                    <Paragraph type="secondary" style={{ margin: '4px 0 0', fontSize: '0.82rem' }}>
+                      {project.target_audience}
+                    </Paragraph>
+                  </div>
+                )}
+                {project.pitfalls && (
+                  <div>
+                    <span className="np-label">常见误区</span>
+                    <Paragraph type="secondary" style={{ margin: '4px 0 0', fontSize: '0.82rem' }}>
+                      {project.pitfalls}
+                    </Paragraph>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-
-      <Divider style={{ margin: '12px 0' }} />
 
       <div className="project-card-footer">
-        <Space size={8} wrap>
+        <Space size={12} wrap>
           {isGithub && project.repo_url && (
-            <a href={project.repo_url} target="_blank" rel="noreferrer noopener">
-              <GithubOutlined /> {project.repo_full_name ?? '查看仓库'}
+            <a
+              className="project-card-repo"
+              href={project.repo_url}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <GithubOutlined /> {project.repo_full_name ?? project.repo_url}
             </a>
           )}
           {isGithub && project.language && <Tag>{project.language}</Tag>}
-          {project.match_reason && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {project.match_reason}
-            </Text>
-          )}
         </Space>
 
         <Button
           type="primary"
-          icon={<RocketOutlined />}
           loading={starting}
           disabled={disabled}
           onClick={() => onStart(project)}
