@@ -71,8 +71,17 @@ _CODE_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL | re.IGNORE
 _TRAILING_COMMA_RE = re.compile(r",\s*([}\]])")
 
 
+# JSON 字符串字面量内不允许出现裸控制字符，需要转义回 \n / \r / \t
+# 注意：字典的键是「真实控制字符」，值才是「反斜杠 + 字母」的转义写法
+_CONTROL_CHAR_ESCAPES = {"\n": "\\n", "\r": "\\r", "\t": "\\t"}
+
+
 def _escape_control_chars(text: str) -> str:
-    """转义 JSON 字符串字面量内部的裸换行/制表符（模型偶尔会输出多行字符串）。"""
+    """转义 JSON 字符串字面量内部的裸换行/制表符（模型偶尔会输出多行字符串）。
+
+    只在字符串内部转义，字符串外的换行属于 JSON 的结构性空白，必须原样保留。
+    已存在的转义序列（如 \\" 或 \\n）通过 `escaped` 标记原样跳过，不会被二次转义。
+    """
     out: list[str] = []
     in_string = False
     escaped = False
@@ -89,8 +98,8 @@ def _escape_control_chars(text: str) -> str:
             in_string = not in_string
             out.append(char)
             continue
-        if in_string and char in "\n\r\t":
-            out.append({"\\n": "\\n", "\\r": "\\r", "\\t": "\\t"}[f"\\{char}"])
+        if in_string and char in _CONTROL_CHAR_ESCAPES:
+            out.append(_CONTROL_CHAR_ESCAPES[char])
             continue
         out.append(char)
     return "".join(out)
