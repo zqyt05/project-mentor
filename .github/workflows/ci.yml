@@ -1,0 +1,72 @@
+name: CI
+
+# 每次推送与 PR 都跑一遍，防止「改了 A 弄坏 B」而没被察觉
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支的旧任务自动取消，避免排队
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: 后端（导入检查 + 单元测试）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: 安装依赖
+        run: pip install -r requirements-dev.txt
+
+      - name: 导入检查（捕获语法错误与循环导入）
+        run: python -c "from app.main import app; print('导入成功：', app.title)"
+
+      - name: 运行单元测试
+        # 全部用例均为离线测试，不依赖 DEEPSEEK_API_KEY 与 GITHUB_TOKEN
+        run: python -m pytest -v
+
+  frontend:
+    name: 前端（类型检查 + Lint + 构建）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 类型检查
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: 构建
+        run: pnpm build
