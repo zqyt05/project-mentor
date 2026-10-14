@@ -72,19 +72,5 @@ class Task(Base, TimestampMixin):
     project: Mapped["Project"] = relationship(back_populates="tasks")
     stage: Mapped["Stage"] = relationship(back_populates="tasks")
 
-    @property
-    def locked(self) -> bool:
-        """顺序门禁：前面的任务尚未完成时，该任务处于未解锁状态。
-
-        对应 PRD 模块 2「用户标记任务完成后，自动解锁下一阶段任务」。
-        已完成 / 进行中的任务永远不算锁定，避免状态回退时出现死锁。
-        """
-        if self.status != TaskStatus.TODO:
-            return False
-        return any(
-            other.order_index < self.order_index and other.status != TaskStatus.DONE
-            for other in self.project.tasks
-        )
-
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Task id={self.id} name={self.name!r} status={self.status}>"

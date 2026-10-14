@@ -23,8 +23,6 @@ class TaskOut(ORMModel):
     status: str = "todo"
     started_at: datetime | None = None
     completed_at: datetime | None = None
-    # 计算字段：前置任务未完成时为 True（不可开始），由 ORM 的 Task.locked 属性提供
-    locked: bool = False
 
 
 class StageOut(ORMModel):

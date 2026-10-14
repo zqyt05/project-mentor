@@ -173,43 +173,60 @@ class TestDecompositionPersistence:
         assert [task.name for task in project.tasks] == ["有效任务"]
 
 
-class TestTaskLocking:
-    """顺序门禁：完成前一个任务才解锁下一个。"""
+class TestTaskOrderingIsFree:
+    """任务之间**没有**顺序门禁。
 
-    def test_only_first_task_unlocked_initially(self, db: Session) -> None:
+    产品的推荐节奏是「完成一个再进入下一个」，但学习者可以按自己的实际情况
+    跳着做（例如已经会某部分，想先从后面的任务开始）。因此任意任务都可以直接开始。
+    这组用例锁定该行为，防止后续迭代误把门禁加回来。
+    """
+
+    def test_last_task_can_start_while_first_is_untouched(self, db: Session) -> None:
+        """第一个任务还没开始时，最后一个任务同样可以直接开始。"""
+        from app.api.task import _apply_status
+
+        _, tasks = build_tasks(db, [TaskStatus.TODO] * 3)
+        _apply_status(tasks[2], TaskStatus.IN_PROGRESS)
+        db.commit()
+
+        assert tasks[2].status == TaskStatus.IN_PROGRESS
+        assert tasks[0].status == TaskStatus.TODO
+        assert tasks[1].status == TaskStatus.TODO
+
+    def test_middle_task_can_start_out_of_order(self, db: Session) -> None:
+        from app.api.task import _apply_status
+
+        _, tasks = build_tasks(db, [TaskStatus.TODO] * 3)
+        _apply_status(tasks[1], TaskStatus.IN_PROGRESS)
+        db.commit()
+
+        assert tasks[1].status == TaskStatus.IN_PROGRESS
+        assert tasks[1].started_at is not None
+
+    def test_apply_status_does_not_raise_regardless_of_order(self, db: Session) -> None:
+        """_apply_status 不应因前置任务未完成而抛错。"""
+        from app.api.task import _apply_status
+
         _, tasks = build_tasks(
             db, [TaskStatus.TODO, TaskStatus.TODO, TaskStatus.TODO]
         )
-        assert tasks[0].locked is False
-        assert tasks[1].locked is True
-        assert tasks[2].locked is True
+        for task in reversed(tasks):
+            _apply_status(task, TaskStatus.IN_PROGRESS)
+        db.commit()
 
-    def test_completing_previous_unlocks_next(self, db: Session) -> None:
-        _, tasks = build_tasks(
-            db, [TaskStatus.DONE, TaskStatus.TODO, TaskStatus.TODO]
-        )
-        assert tasks[1].locked is False
-        # 第二个还没完成，所以第三个仍然锁着
-        assert tasks[2].locked is True
+        assert all(task.status == TaskStatus.IN_PROGRESS for task in tasks)
 
-    def test_locked_requires_all_previous_done(self, db: Session) -> None:
-        """前序任务里只要有一个没完成，当前任务就不算解锁。"""
-        _, tasks = build_tasks(
-            db, [TaskStatus.DONE, TaskStatus.IN_PROGRESS, TaskStatus.TODO]
-        )
-        assert tasks[2].locked is True
+    def test_task_model_has_no_locking_concept(self) -> None:
+        """模型层不再暴露任何锁定语义。"""
+        from app.models import Task
 
-    def test_done_and_in_progress_are_never_locked(self, db: Session) -> None:
-        """已完成 / 进行中的任务永不锁定，避免用户回退状态时死锁。"""
-        _, tasks = build_tasks(
-            db, [TaskStatus.TODO, TaskStatus.DONE, TaskStatus.IN_PROGRESS]
-        )
-        assert tasks[1].locked is False
-        assert tasks[2].locked is False
+        assert not hasattr(Task, "locked")
 
-    def test_nothing_locked_when_all_done(self, db: Session) -> None:
-        _, tasks = build_tasks(db, [TaskStatus.DONE] * 3)
-        assert not any(task.locked for task in tasks)
+    def test_schema_omits_locked_field(self) -> None:
+        """接口响应不再下发 locked 字段。"""
+        from app.schemas.task import TaskOut
+
+        assert "locked" not in TaskOut.model_fields
 
 
 class TestProgress:

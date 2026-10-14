@@ -84,10 +84,12 @@ def update_task(
 
 
 def _apply_status(task: Task, status: str) -> None:
-    """统一处理状态迁移时的时间戳与门禁校验。"""
+    """统一处理状态迁移时的时间戳维护。
+
+    说明：不设顺序门禁。产品的推荐节奏是「完成一个再进入下一个」，
+    但学习者可以根据自己的实际情况跳着做，因此任意任务都可以直接开始。
+    """
     if status == TaskStatus.IN_PROGRESS:
-        if task.locked:
-            raise BusinessError("请先完成前面的任务，再开始当前任务")
         task.status = TaskStatus.IN_PROGRESS
         task.started_at = task.started_at or utcnow()
     elif status == TaskStatus.DONE:
@@ -134,11 +136,13 @@ def complete_task(task_id: int, db: Session = Depends(get_db)) -> dict:
     db.refresh(project)
 
     progress = project_service.compute_progress(project)
-    unlocked = next(
+    # 「下一个任务」= 顺序上最靠前的未开始任务，仅用于给用户一个推进建议，
+    # 不构成门禁：其余任务同样可以随时开始。
+    next_task = next(
         (
             item
             for item in sorted(project.tasks, key=lambda x: x.order_index)
-            if item.status == TaskStatus.TODO and not item.locked
+            if item.status == TaskStatus.TODO
         ),
         None,
     )
@@ -147,12 +151,12 @@ def complete_task(task_id: int, db: Session = Depends(get_db)) -> dict:
             "task": _serialize(task),
             "progress": progress.model_dump(),
             "project_status": project.status,
-            "unlocked_task": _serialize(unlocked) if unlocked else None,
+            "next_task": _serialize(next_task) if next_task else None,
         },
         message=(
             "全部任务已完成，进入费曼复盘环节"
             if progress.all_completed
-            else "任务已完成，已解锁下一个任务"
+            else "任务已完成"
         ),
     )
 
