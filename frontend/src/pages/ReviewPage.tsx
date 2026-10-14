@@ -27,15 +27,9 @@ import {
   Typography,
 } from 'antd'
 import {
-  BulbOutlined,
   CopyOutlined,
-  EditOutlined,
-  FileTextOutlined,
   QuestionCircleOutlined,
   ReloadOutlined,
-  RocketOutlined,
-  ThunderboltOutlined,
-  ToolOutlined,
 } from '@ant-design/icons'
 import { useAppStore } from '@/store/useAppStore'
 import { reviewApi } from '@/api/review'
@@ -133,9 +127,7 @@ export default function ReviewPage() {
             <Title level={4} style={{ margin: 0 }}>
               费曼学习法 · 项目复盘
             </Title>
-            <Tag icon={<BulbOutlined />} color="gold">
-              知识闭环
-            </Tag>
+            <Tag>知识闭环</Tag>
             <Text type="secondary" style={{ fontSize: 12 }}>
               用自己的话讲清楚，才是真的学会了
             </Text>
@@ -168,7 +160,7 @@ export default function ReviewPage() {
             size="small"
             title={
               <Space>
-                <EditOutlined /> 我的复盘
+                我的复盘
               </Space>
             }
             className="review-editor-card"
@@ -250,7 +242,6 @@ export default function ReviewPage() {
               <Space>
                 <Button
                   type="primary"
-                  icon={<ThunderboltOutlined />}
                   loading={submitting}
                   onClick={handleSubmit}
                   disabled={!content.trim()}
@@ -289,7 +280,7 @@ export default function ReviewPage() {
             size="small"
             title={
               <Space>
-                <FileTextOutlined /> AI 优化后的复盘文档
+                AI 优化后的复盘文档
               </Space>
             }
             className="review-result-card"
@@ -346,7 +337,6 @@ export default function ReviewPage() {
                       key: 'corrections',
                       label: (
                         <Space>
-                          <ToolOutlined style={{ color: '#ff4d4f' }} />
                           <Text strong>理解纠错</Text>
                           <Tag>{review.corrections.length}</Tag>
                         </Space>
@@ -366,7 +356,6 @@ export default function ReviewPage() {
                       key: 'supplements',
                       label: (
                         <Space>
-                          <BulbOutlined style={{ color: '#faad14' }} />
                           <Text strong>知识点补全</Text>
                           <Tag>{review.supplements.length}</Tag>
                         </Space>
@@ -386,7 +375,6 @@ export default function ReviewPage() {
                       key: 'structure',
                       label: (
                         <Space>
-                          <FileTextOutlined style={{ color: '#1677ff' }} />
                           <Text strong>结构与表达建议</Text>
                         </Space>
                       ),
@@ -400,7 +388,6 @@ export default function ReviewPage() {
                       key: 'next',
                       label: (
                         <Space>
-                          <RocketOutlined style={{ color: '#52c41a' }} />
                           <Text strong>下一步深化学习</Text>
                           <Tag>{review.next_steps.length}</Tag>
                         </Space>

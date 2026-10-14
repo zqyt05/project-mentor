@@ -3,7 +3,7 @@
  * 按顺序展示阶段与任务，点击任务即可让右侧答疑窗口绑定该任务上下文。
  */
 
-import { Empty, Progress, Space, Tag, Timeline, Tooltip, Typography } from 'antd'
+import { Empty, Progress, Space, Timeline, Tooltip, Typography } from 'antd'
 import {
   CheckCircleFilled,
   ClockCircleOutlined,
@@ -48,12 +48,11 @@ export default function StageTimeline({ stages }: StageTimelineProps) {
           children: (
             <div className="timeline-stage">
               <div className="timeline-stage-head">
-                <Space size={8} wrap>
-                  <Text strong>{stage.name}</Text>
-                  {stage.is_milestone && <Tag color="gold">里程碑</Tag>}
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                <Space size={10} wrap>
+                  <span className="timeline-stage-name">{stage.name}</span>
+                  <span className="timeline-stage-count">
                     {done}/{stage.tasks.length} 已完成
-                  </Text>
+                  </span>
                 </Space>
                 <Progress
                   percent={percent}

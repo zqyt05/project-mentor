@@ -120,13 +120,12 @@ export default function TasksPage() {
           return (
             <div key={stage.id} className="stage-group">
               <div className="stage-group-head">
-                <Space size={8} wrap>
+                <Space size={10} wrap>
                   <span className="stage-group-index">{stage.order_index + 1}</span>
-                  <Text strong>{stage.name}</Text>
-                  {stage.is_milestone && <Tag color="gold">里程碑</Tag>}
-                  <Text type="secondary" style={{ fontSize: 12 }}>
+                  <span className="stage-group-name">{stage.name}</span>
+                  <span className="stage-group-count">
                     {done}/{stage.tasks.length} 已完成
-                  </Text>
+                  </span>
                 </Space>
                 <Progress
                   percent={stagePercent}
