@@ -9,13 +9,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, App, Button, Empty, Input, Space, Spin, Tag, Typography } from 'antd'
-import {
-  ClearOutlined,
-  DeleteOutlined,
-  SendOutlined,
-  ThunderboltOutlined,
-} from '@ant-design/icons'
+import { Alert, App, Button, Empty, Input, Spin, Tag, Typography } from 'antd'
+import { ClearOutlined, SendOutlined } from '@ant-design/icons'
 import { chatApi } from '@/api/chat'
 import MessageBubble from '@/components/MessageBubble'
 import { useAppStore } from '@/store/useAppStore'
@@ -169,10 +164,7 @@ export default function ChatPanel() {
     <aside className="chat-panel">
       <div className="chat-header">
         <div className="chat-header-main">
-          <Space size={6}>
-            <ThunderboltOutlined className="chat-header-icon" />
-            <Text strong>带教导师 · 答疑窗口</Text>
-          </Space>
+          <span className="chat-title">答疑窗口</span>
           <Button
             type="text"
             size="small"
@@ -180,6 +172,7 @@ export default function ChatPanel() {
             onClick={handleClear}
             disabled={!canChat || messages.length === 0}
             title="清空当前任务的对话"
+            aria-label="清空当前任务的对话"
           />
         </div>
         <div className="chat-header-context">
@@ -287,26 +280,15 @@ export default function ChatPanel() {
             <Text type="secondary" style={{ fontSize: 11 }}>
               Enter 发送 · Shift+Enter 换行
             </Text>
-            <Space size={4}>
-              <Button
-                size="small"
-                icon={<DeleteOutlined />}
-                onClick={() => setQuestion('')}
-                disabled={!question}
-              >
-                清空输入
-              </Button>
-              <Button
-                type="primary"
-                size="small"
-                icon={<SendOutlined />}
-                loading={chatLoading}
-                disabled={!canChat || !question.trim()}
-                onClick={() => void handleSend(question)}
-              >
-                发送
-              </Button>
-            </Space>
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              loading={chatLoading}
+              disabled={!canChat || !question.trim()}
+              onClick={() => void handleSend(question)}
+              aria-label="发送"
+              title="发送"
+            />
           </div>
         </div>
       </div>
