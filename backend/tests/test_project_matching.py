@@ -176,3 +176,62 @@ class TestGithubSearchThreshold:
 
         assert len(candidates) == 2
         assert all(c.source == ProjectSource.GITHUB for c in candidates)
+
+
+class TestLlmOutputCleaning:
+    """清理模型误加到字段值上的字段名前缀。
+
+    界面已用独立标签展示字段名（如「适配人群」），模型若在值里再写一遍
+    「适配人群：……」，渲染出来就是重复的两遍。
+    """
+
+    @pytest.mark.parametrize(
+        ("raw", "key", "expected"),
+        [
+            ("适配人群：零基础也能学", "target_audience", "零基础也能学"),
+            ("适合人群: 有 JS 基础", "target_audience", "有 JS 基础"),
+            ("适配人群:  带空格的前缀", "target_audience", "带空格的前缀"),
+            ("常见学习误区：一上来就背语法", "pitfalls", "一上来就背语法"),
+            ("常见误区: 只看不练", "pitfalls", "只看不练"),
+            ("学习误区：不求甚解", "pitfalls", "不求甚解"),
+            ("项目背景：模拟一家咖啡店", "background", "模拟一家咖啡店"),
+            ("推荐理由：值得一练", "summary", "值得一练"),
+            # 正常内容必须原样保留
+            ("零基础也能学", "target_audience", "零基础也能学"),
+            ("", "target_audience", ""),
+        ],
+    )
+    def test_strip_scalar_prefix(self, raw: str, key: str, expected: str) -> None:
+        assert ps._clean_scalar(raw, key) == expected
+
+    def test_scalar_strips_only_leading_prefix(self) -> None:
+        """只剥离开头的前缀，正文中出现的同名词不能被误删。"""
+        text = "零基础即可，适配人群：其实是所有人"
+        assert ps._clean_scalar(text, "target_audience") == text
+
+    def test_list_items_strip_numbering(self) -> None:
+        items = [
+            "交付物1：一份 Excel 报表",
+            "交付物2、一页老板能看懂的说明",
+            "实战目标1，跑通本地环境",
+            "目标 2：做出可交互界面",
+            "知识点3）掌握 Hooks",
+        ]
+        assert ps._clean_list_items(items, 5) == [
+            "一份 Excel 报表",
+            "一页老板能看懂的说明",
+            "跑通本地环境",
+            "做出可交互界面",
+            "掌握 Hooks",
+        ]
+
+    def test_list_items_keep_plain_content(self) -> None:
+        """不含编号前缀的内容不能被改动。"""
+        items = ["目标是学会 React", "跟着课程做一遍", "写一份笔记"]
+        assert ps._clean_list_items(items, 5) == items
+
+    def test_list_items_drop_blanks_and_limit(self) -> None:
+        assert ps._clean_list_items(["a", "  ", "", "b", "c"], 2) == ["a", "b"]
+
+    def test_list_items_handles_none(self) -> None:
+        assert ps._clean_list_items(None, 3) == []

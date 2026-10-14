@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date, timedelta
 from typing import Any
 
@@ -40,6 +41,53 @@ from app.services.llm_service import get_llm_service, render_prompt
 from app.utils.response import CODE_NOT_FOUND, BusinessError
 
 logger = logging.getLogger(__name__)
+
+# ======================================================================
+# LLM 输出清洗
+# ======================================================================
+# 模型偶尔会把字段名当成内容的一部分输出（例如 target_audience 返回
+# 「适配人群：零基础也能学」）。界面上字段名由独立标签展示，重复出现会显得冗余，
+# 因此在入库前统一剥掉。Prompt 已明确要求不带前缀，这里是兜底。
+
+# 标量字段：需要剥掉的前缀（中英文冒号都考虑）
+_SCALAR_LABEL_PREFIXES: dict[str, tuple[str, ...]] = {
+    "summary": ("项目简介：", "项目简介:", "推荐理由：", "推荐理由:"),
+    "background": ("项目背景：", "项目背景:"),
+    "target_audience": ("适配人群：", "适配人群:", "适合人群：", "适合人群:"),
+    "pitfalls": (
+        "常见学习误区：",
+        "常见学习误区:",
+        "常见误区：",
+        "常见误区:",
+        "学习误区：",
+        "学习误区:",
+    ),
+}
+
+# 列表项：剥掉「交付物1：」「实战目标 2、」「目标3，」这类编号前缀。
+# 分隔符要覆盖中英文标点 —— 模型用全角逗号「，」的情况很常见。
+_LIST_ITEM_PREFIX_RE = re.compile(
+    r"^(?:交付物|实战目标|目标|知识点)\s*\d+\s*[：:，,、.。)）\-]\s*"
+)
+
+
+def _clean_scalar(value: Any, key: str) -> str:
+    """去掉模型误加的字段名前缀。"""
+    text = str(value or "").strip()
+    for prefix in _SCALAR_LABEL_PREFIXES.get(key, ()):  # 按声明顺序匹配
+        if text.startswith(prefix):
+            return text[len(prefix) :].strip()
+    return text
+
+
+def _clean_list_items(values: Any, limit: int) -> list[str]:
+    """清理列表字段：去掉编号前缀、丢弃空项、截断到上限。"""
+    cleaned: list[str] = []
+    for item in values or []:
+        text = _LIST_ITEM_PREFIX_RE.sub("", str(item).strip()).strip()
+        if text:
+            cleaned.append(text)
+    return cleaned[:limit]
 
 # 路径 A 最终输出的项目数量
 _GITHUB_RESULT_LIMIT = 5
@@ -89,18 +137,14 @@ def _candidate_from_repo(repo: GithubRepo, generated: dict[str, Any], difficulty
         name=repo.name,
         source=ProjectSource.GITHUB,
         difficulty=difficulty,
-        summary=str(generated.get("summary", "") or repo.description or ""),
-        background=str(generated.get("background", "") or repo.description or ""),
-        goals=[str(item) for item in (generated.get("goals") or [])][:4],
-        core_points=[str(item) for item in (generated.get("core_points") or [])][:5],
-        deliverables=[
-            str(item) for item in (generated.get("deliverables") or []) if str(item).strip()
-        ],
-        target_audience=str(generated.get("target_audience", "") or ""),
-        pitfalls=str(generated.get("pitfalls", "") or ""),
-        match_reason=(
-            f"Star {repo.stars} · {repo.language or '未标注语言'}"
-        ),
+        summary=_clean_scalar(generated.get("summary") or repo.description, "summary"),
+        background=_clean_scalar(generated.get("background") or repo.description, "background"),
+        goals=_clean_list_items(generated.get("goals"), 4),
+        core_points=_clean_list_items(generated.get("core_points"), 5),
+        deliverables=_clean_list_items(generated.get("deliverables"), 4),
+        target_audience=_clean_scalar(generated.get("target_audience"), "target_audience"),
+        pitfalls=_clean_scalar(generated.get("pitfalls"), "pitfalls"),
+        match_reason=(f"Star {repo.stars} · {repo.language or '未标注语言'}"),
         repo_url=repo.url,
         repo_full_name=repo.full_name,
         stars=repo.stars,
@@ -204,15 +248,13 @@ async def generate_custom_projects(
                 name=str(item.get("name")),
                 source=ProjectSource.CUSTOM,
                 difficulty=str(item.get("difficulty") or difficulty),
-                summary=str(item.get("summary", "") or ""),
-                background=str(item.get("background", "") or ""),
-                goals=[str(goal) for goal in (item.get("goals") or [])][:4],
-                core_points=[str(point) for point in (item.get("core_points") or [])][:5],
-                deliverables=[
-                    str(point) for point in (item.get("deliverables") or []) if str(point).strip()
-                ],
-                target_audience=str(item.get("target_audience", "") or ""),
-                pitfalls=str(item.get("pitfalls", "") or ""),
+                summary=_clean_scalar(item.get("summary"), "summary"),
+                background=_clean_scalar(item.get("background"), "background"),
+                goals=_clean_list_items(item.get("goals"), 4),
+                core_points=_clean_list_items(item.get("core_points"), 5),
+                deliverables=_clean_list_items(item.get("deliverables"), 4),
+                target_audience=_clean_scalar(item.get("target_audience"), "target_audience"),
+                pitfalls=_clean_scalar(item.get("pitfalls"), "pitfalls"),
                 match_reason="AI 定制项目 · 交付物导向",
             )
         )
