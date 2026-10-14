@@ -1,0 +1,8 @@
+# ProjectMentor 开发依赖
+# 安装：pip install -r requirements-dev.txt
+#
+# 说明：pytest 仅用于本地开发与 CI，不属于运行时依赖
+
+-r requirements.txt
+
+pytest==8.4.2
