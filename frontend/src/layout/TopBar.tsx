@@ -88,7 +88,7 @@ export default function TopBar() {
             icon={<HomeOutlined />}
             onClick={() => navigate('/')}
           >
-            开始学习
+            回到首页
           </Button>
           <Button
             type={onHistory ? 'primary' : 'text'}

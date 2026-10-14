@@ -35,6 +35,7 @@ export default function ChatPanel() {
 
   const [question, setQuestion] = useState('')
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [quickOpen, setQuickOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // 复盘页使用 review 作用域，其余页面绑定具体任务
@@ -239,19 +240,41 @@ export default function ChatPanel() {
       </div>
 
       <div className="chat-footer">
+        {/* 快速提问默认收起：5 个模板常驻会占掉答疑窗口不少高度 */}
         {canChat && quickPrompts.length > 0 && (
           <div className="chat-quick">
-            {quickPrompts.map((prompt) => (
-              <Button
-                key={prompt}
-                size="small"
-                className="chat-quick-btn"
-                disabled={chatLoading}
-                onClick={() => handleSend(prompt)}
-              >
-                {prompt}
-              </Button>
-            ))}
+            <button
+              type="button"
+              className="chat-quick-toggle"
+              onClick={() => setQuickOpen((open) => !open)}
+              aria-expanded={quickOpen}
+            >
+              <span className="np-label">
+                快速提问 · {quickPrompts.length} 条
+              </span>
+              <span className={`chat-quick-toggle-icon ${quickOpen ? 'chat-quick-toggle-icon-open' : ''}`}>
+                +
+              </span>
+            </button>
+
+            {quickOpen && (
+              <div className="chat-quick-list">
+                {quickPrompts.map((prompt) => (
+                  <Button
+                    key={prompt}
+                    size="small"
+                    className="chat-quick-btn"
+                    disabled={chatLoading}
+                    onClick={() => {
+                      setQuickOpen(false)
+                      void handleSend(prompt)
+                    }}
+                  >
+                    {prompt}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

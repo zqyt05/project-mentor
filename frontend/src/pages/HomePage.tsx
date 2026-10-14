@@ -115,9 +115,6 @@ export default function HomePage() {
             placeholder="例如：React 前端入门 / 财务报表分析 / 新媒体运营"
             value={localDomain}
             onChange={(event) => setLocalDomain(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') void handleSubmit()
-            }}
             disabled={loading}
             aria-label="学习方向"
           />
