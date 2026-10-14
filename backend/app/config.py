@@ -46,7 +46,11 @@ class Settings(BaseSettings):
     GITHUB_MIN_QUALIFIED: int = 3
 
     # ===== 数据库 =====
-    DATABASE_URL: str = "sqlite:///./projectmentor.db"
+    # 默认锚定 backend/ 目录的绝对路径，与进程的当前工作目录（CWD）无关。
+    # 这样无论从仓库根目录还是 backend/ 下启动，数据库都落在同一处，
+    # 避免「按 README 启动后找不到数据」这类问题。
+    # 注意：SQLAlchemy 的 sqlite 绝对路径需要四个斜杠（sqlite:////abs/path）。
+    DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'projectmentor.db'}"
 
     # ===== CORS =====
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
