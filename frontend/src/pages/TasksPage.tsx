@@ -8,8 +8,8 @@
 import { Alert, Button, Card, Empty, Progress, Space, Tag, Typography } from 'antd'
 import { ClockCircleOutlined, FireOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { projectApi } from '@/api/project'
 import TaskCard from '@/components/TaskCard'
 import { useAppStore } from '@/store/useAppStore'
@@ -23,8 +23,33 @@ export default function TasksPage() {
   const setProject = useAppStore((state) => state.setProject)
   const activeTaskId = useAppStore((state) => state.activeTaskId)
   const setActiveTaskId = useAppStore((state) => state.setActiveTaskId)
+  // 从「项目总览」的时间线跳转过来时携带的定位意图
+  const location = useLocation()
+  const focusTaskId = (location.state as { focusTaskId?: number } | null)?.focusTaskId
 
-  /** 任务状态变化后重新拉取项目详情，保证进度与解锁状态同步 */
+  /**
+   * 滚动定位到目标任务并短暂高亮，让用户立刻看到自己点的是哪一条。
+   *
+   * 依赖里带上 location.key：即使连续两次点击同一个任务，也会重新定位。
+   * 这里刻意不使用「先标记已消费再执行」的写法 —— React StrictMode 在开发环境会
+   * 双调用 effect（第一次立即被 cleanup），那种写法会导致第二次直接跳过、定位失效。
+   */
+  useEffect(() => {
+    if (!focusTaskId) return
+
+    // 等卡片渲染完成再滚动
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`task-${focusTaskId}`)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('task-card-flash')
+      window.setTimeout(() => el.classList.remove('task-card-flash'), 1600)
+    }, 150)
+
+    return () => window.clearTimeout(timer)
+  }, [focusTaskId, location.key])
+
+  /** 任务状态变化后重新拉取项目详情，保证进度与统计同步 */
   const reload = useCallback(async () => {
     if (!project) return
     const detail = await projectApi.detail(project.id)
@@ -40,7 +65,7 @@ export default function TasksPage() {
 
   const progress = project.progress
   const currentTask = project.tasks.find((task) => task.status === 'in_progress')
-  const nextTask = project.tasks.find((task) => task.status === 'todo' && !task.locked)
+  const nextTask = project.tasks.find((task) => task.status === 'todo')
 
   // 逾期任务提醒
   const overdueTasks = project.tasks.filter(
@@ -88,7 +113,8 @@ export default function TasksPage() {
           </Space>
 
           <Text type="secondary" style={{ fontSize: 12 }}>
-            任务按顺序解锁：完成当前任务后会自动解锁下一个。点击任务卡片可让右侧答疑窗口绑定该任务上下文。
+            推荐按顺序推进，但你可以根据实际情况跳着做 —— 任意任务都能直接开始。
+            点击任务卡片可让右侧答疑窗口绑定该任务上下文。
           </Text>
         </Space>
       </Card>

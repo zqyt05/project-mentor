@@ -9,7 +9,6 @@ import { App, Button, DatePicker, Popconfirm, Space, Tag, Tooltip, Typography } 
 import {
   CheckOutlined,
   ClockCircleOutlined,
-  LockOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
   UndoOutlined,
@@ -75,8 +74,8 @@ export default function TaskCard({ task, index, active, onChanged }: TaskCardPro
       message.success(
         result.progress.all_completed
           ? '全部任务已完成，已进入费曼复盘环节'
-          : result.unlocked_task
-            ? `任务完成！已解锁「${result.unlocked_task.name}」`
+          : result.next_task
+            ? `任务完成！下一个建议做「${result.next_task.name}」`
             : '任务已完成',
       )
     })
@@ -91,15 +90,11 @@ export default function TaskCard({ task, index, active, onChanged }: TaskCardPro
 
   return (
     <div
-      className={[
-        'task-card',
-        `task-card-${task.status}`,
-        active ? 'task-card-active' : '',
-        task.locked ? 'task-card-locked' : '',
-      ]
+      id={`task-${task.id}`}
+      className={['task-card', `task-card-${task.status}`, active ? 'task-card-active' : '']
         .filter(Boolean)
         .join(' ')}
-      onClick={() => !task.locked && setActiveTaskId(task.id)}
+      onClick={() => setActiveTaskId(task.id)}
       role="button"
       tabIndex={0}
     >
@@ -110,11 +105,6 @@ export default function TaskCard({ task, index, active, onChanged }: TaskCardPro
             {task.name}
           </Text>
           <Tag color={meta.color}>{meta.label}</Tag>
-          {task.locked && (
-            <Tooltip title="完成前面的任务后自动解锁">
-              <Tag icon={<LockOutlined />}>待解锁</Tag>
-            </Tooltip>
-          )}
           {active && <Tag color="blue">答疑已绑定</Tag>}
         </Space>
 
@@ -185,7 +175,6 @@ export default function TaskCard({ task, index, active, onChanged }: TaskCardPro
               size="small"
               icon={<PlayCircleOutlined />}
               loading={busy}
-              disabled={task.locked}
               onClick={handleStart}
             >
               开始当前任务
