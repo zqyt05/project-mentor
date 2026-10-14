@@ -104,6 +104,8 @@ export interface ProjectBrief {
 /** 项目详情 */
 export interface ProjectDetail extends ProjectBrief {
   background: string
+  /** GitHub 项目的 README 摘要（定制项目为空字符串） */
+  readme_digest: string
   goals: string[]
   core_points: string[]
   target_audience: string
