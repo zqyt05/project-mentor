@@ -1,18 +1,22 @@
 /**
- * 首页：输入学习方向 + 选择难度（PRD 模块 1 · 输入）。
+ * 首页（PRD 模块 1 · 输入）。
  *
- * 提交后系统自动判断领域类型，选择最优路径生成实战项目选项。
+ * 新闻纸风格：巨大的衬线标题主导视口，下方是「报头式」的输入区，
+ * 再往下是以 STEP 1–4 竖向排列的流程说明。
+ *
+ * 按需求调整：去掉了标题前的闪电图标与「开始匹配项目」的火箭图标，
+ * 减少了口号式的堆砌文案，四个环节改为竖排并明确标注 STEP 编号。
  */
 
 import { useState } from 'react'
-import { Alert, App, Button, Card, Col, Radio, Row, Space, Tag, Typography } from 'antd'
-import { ExperimentOutlined, RocketOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { Alert, App, Radio, Typography } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import dayjs from 'dayjs'
 import { projectApi } from '@/api/project'
 import { useMatchStore } from '@/store/useMatchStore'
 import type { Difficulty } from '@/api/types'
 
-const { Paragraph, Text, Title } = Typography
+const { Text } = Typography
 
 /** 示例方向：覆盖技术类与通用类，帮助用户理解产品能力边界 */
 const EXAMPLES: { label: string; difficulty: Difficulty }[] = [
@@ -24,11 +28,28 @@ const EXAMPLES: { label: string; difficulty: Difficulty }[] = [
   { label: '机器学习实战', difficulty: '中级' },
 ]
 
+/** 四个环节：竖向排版，明确编号 */
 const FLOW_STEPS = [
-  { title: '项目匹配', desc: '技术类检索 GitHub 优质开源项目；通用类由 AI 定制实战项目' },
-  { title: '任务拆解 + DDL', desc: '拆成 4-6 个阶段任务，每个任务带知识点、交付标准和截止日期' },
-  { title: '双窗口答疑', desc: '右侧导师窗口自动绑定当前任务，答疑不会冲掉左侧任务记录' },
-  { title: '费曼复盘', desc: '用自己的话讲一遍，AI 纠错补全并生成可展示的复盘文档' },
+  {
+    step: 'STEP 1',
+    title: '项目匹配',
+    desc: '技术类方向检索 GitHub 优质开源项目并按适配度排序；通用类方向由 AI 定制有明确交付物的实战项目。',
+  },
+  {
+    step: 'STEP 2',
+    title: '任务拆解 + DDL',
+    desc: '拆成 4–6 个阶段任务，每个任务带需掌握的知识点、可判断的交付标准和截止日期。',
+  },
+  {
+    step: 'STEP 3',
+    title: '双窗口答疑',
+    desc: '右侧答疑窗口自动绑定当前任务的项目背景，且永远不会冲掉左侧的任务记录。',
+  },
+  {
+    step: 'STEP 4',
+    title: '费曼复盘',
+    desc: '用自己的话讲一遍项目，AI 从纠错、补全、结构、深化四个维度批改并生成可展示的复盘文档。',
+  },
 ]
 
 export default function HomePage() {
@@ -70,122 +91,125 @@ export default function HomePage() {
   }
 
   return (
-    <div className="page home-page">
-      <Card className="home-hero">
-        <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          <div className="home-title-block">
-            <ThunderboltOutlined className="home-title-icon" />
-            <div>
-              <Title level={2} style={{ margin: 0 }}>
-                你想学点什么？
-              </Title>
-              <Paragraph type="secondary" style={{ margin: 0, fontSize: 15 }}>
-                输入任意学习方向，我会帮你匹配一个能真正上手做完的实战项目
-              </Paragraph>
-            </div>
-          </div>
+    <div className="page">
+      {/* ---------- 报头式主标题区 ---------- */}
+      <section className="home-masthead newsprint-texture">
+        <div className="home-kicker">
+          <span className="np-label np-label-red">实战学习</span>
+          <span className="np-label">
+            {dayjs().format('YYYY.MM.DD')} · 第 1 卷
+          </span>
+        </div>
 
-          <div className="home-input">
-            <input
-              className="home-input-field"
-              placeholder="例如：React 前端入门 / 财务报表分析 / 新媒体运营"
-              value={localDomain}
-              onChange={(event) => setLocalDomain(event.target.value)}
+        <h1 className="np-h1">你想学点什么？</h1>
+
+        <p className="home-lede">
+          输入任意学习方向，我会帮你匹配一个能真正上手做完的实战项目 ——
+          不是给你一份课程大纲，而是直接丢给你一个项目，陪你拆任务、定 DDL、随时答疑。
+        </p>
+
+        {/* 输入区：2px 墨框 + 黑色动作块 */}
+        <div className="home-input-row">
+          <input
+            className="home-input-field"
+            placeholder="例如：React 前端入门 / 财务报表分析 / 新媒体运营"
+            value={localDomain}
+            onChange={(event) => setLocalDomain(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void handleSubmit()
+            }}
+            disabled={loading}
+            aria-label="学习方向"
+          />
+          <button className="home-go" onClick={handleSubmit} disabled={loading} type="button">
+            {loading ? '匹配中…' : '开始匹配项目'}
+          </button>
+        </div>
+
+        <div className="home-examples">
+          <span className="np-label" style={{ marginRight: 10, alignSelf: 'center' }}>
+            试试
+          </span>
+          {EXAMPLES.map((example) => (
+            <span
+              key={example.label}
+              className="home-example-tag"
+              role="button"
+              tabIndex={0}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') void handleSubmit()
+                if (event.key === 'Enter') {
+                  setLocalDomain(example.label)
+                  setLocalDifficulty(example.difficulty)
+                }
               }}
-              disabled={loading}
-            />
-          </div>
-
-          <Space size={12} wrap align="center">
-            <Space size={8}>
-              <Text strong>难度</Text>
-              <Radio.Group
-                value={localDifficulty}
-                onChange={(event) => setLocalDifficulty(event.target.value as Difficulty)}
-                optionType="button"
-                buttonStyle="solid"
-                disabled={loading}
-              >
-                <Radio.Button value="入门">入门</Radio.Button>
-                <Radio.Button value="初级">初级</Radio.Button>
-                <Radio.Button value="中级">中级</Radio.Button>
-              </Radio.Group>
-            </Space>
-
-            <Button
-              type="primary"
-              size="large"
-              icon={<RocketOutlined />}
-              loading={loading}
-              onClick={handleSubmit}
+              onClick={() => {
+                setLocalDomain(example.label)
+                setLocalDifficulty(example.difficulty)
+              }}
             >
-              {loading ? 'AI 正在匹配项目…' : '开始匹配项目'}
-            </Button>
-          </Space>
+              {example.label}
+            </span>
+          ))}
+        </div>
 
-          <div>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              试试这些方向：
-            </Text>
-            <div className="home-examples">
-              {EXAMPLES.map((example) => (
-                <Tag
-                  key={example.label}
-                  className="home-example-tag"
-                  onClick={() => {
-                    setLocalDomain(example.label)
-                    setLocalDifficulty(example.difficulty)
-                  }}
-                >
-                  {example.label}
-                </Tag>
-              ))}
+        <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span className="np-label">难度</span>
+          <Radio.Group
+            value={localDifficulty}
+            onChange={(event) => setLocalDifficulty(event.target.value as Difficulty)}
+            optionType="button"
+            buttonStyle="solid"
+            disabled={loading}
+          >
+            <Radio.Button value="入门">入门</Radio.Button>
+            <Radio.Button value="初级">初级</Radio.Button>
+            <Radio.Button value="中级">中级</Radio.Button>
+          </Radio.Group>
+        </div>
+
+        {loading && (
+          <Alert
+            style={{ marginTop: 16 }}
+            type="info"
+            showIcon
+            message="正在为你规划学习路径"
+            description="技术类方向会检索 GitHub 开源项目并逐条评估适配度，通常需要 20–60 秒，请稍候。"
+          />
+        )}
+      </section>
+
+      {/* ---------- STEP 1–4：竖向排版 ---------- */}
+      <section>
+        <div className="np-block-head" style={{ border: '1px solid #111111', borderBottom: 'none' }}>
+          <span className="np-label np-label-ink">工作方式</span>
+          <span className="np-label">四个环节</span>
+        </div>
+        <div className="step-list">
+          {FLOW_STEPS.map((item) => (
+            <div className="step-item" key={item.step}>
+              <div className="step-item-index">{item.step}</div>
+              <div className="step-item-body">
+                <span className="step-item-title">{item.title}</span>
+                <span className="step-item-desc">{item.desc}</span>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          {loading && (
-            <Alert
-              type="info"
-              showIcon
-              message="正在为你规划学习路径"
-              description="技术类方向会检索 GitHub 开源项目并逐条评估适配度，通常需要 20-60 秒，请稍候。"
-            />
-          )}
-        </Space>
-      </Card>
-
-      <Row gutter={[16, 16]} className="home-flow">
-        {FLOW_STEPS.map((step, index) => (
-          <Col xs={24} sm={12} lg={6} key={step.title}>
-            <Card size="small" className="home-flow-card">
-              <Space direction="vertical" size={6}>
-                <Space size={8}>
-                  <span className="home-flow-index">{index + 1}</span>
-                  <Text strong>{step.title}</Text>
-                </Space>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {step.desc}
-                </Text>
-              </Space>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <Card size="small" className="home-note">
-        <Space direction="vertical" size={4}>
-          <Text strong>
-            <ExperimentOutlined /> 关于这个工具
+      {/* ---------- 反转区域：关于这个工具 ---------- */}
+      <section className="np-inverted home-about">
+        <div className="home-about-title">关于这个工具</div>
+        <p className="home-about-text">
+          它复刻的是企业导师带教的逻辑：不是给你一份系统性的课程大纲，而是直接丢给你一个项目，
+          陪你拆任务、定 DDL、随时答疑，最后逼你用自己的话讲一遍。
+        </p>
+        <p className="home-about-text" style={{ marginTop: 8 }}>
+          <Text style={{ color: '#A3A3A3', fontSize: '0.8rem' }}>
+            单用户本地使用 · 所有数据保存在本机 SQLite · 不涉及账号与云端同步
           </Text>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            它复刻的是企业导师带教的逻辑：不是给你一份系统性的课程大纲，而是直接丢给你一个项目，
-            陪你拆任务、定 DDL、随时答疑，最后逼你用自己的话讲一遍。
-            单用户本地使用，所有数据保存在本机 SQLite，不涉及账号与云端同步。
-          </Text>
-        </Space>
-      </Card>
+        </p>
+      </section>
     </div>
   )
 }
