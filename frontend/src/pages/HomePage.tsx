@@ -96,9 +96,7 @@ export default function HomePage() {
       <section className="home-masthead newsprint-texture">
         <div className="home-kicker">
           <span className="np-label np-label-red">实战学习</span>
-          <span className="np-label">
-            {dayjs().format('YYYY.MM.DD')} · 第 1 卷
-          </span>
+          <span className="np-label">{dayjs().format('YYYY.MM.DD')}</span>
         </div>
 
         <h1 className="np-h1">你想学点什么？</h1>
@@ -179,7 +177,6 @@ export default function HomePage() {
       <section>
         <div className="np-block-head" style={{ border: '1px solid #111111', borderBottom: 'none' }}>
           <span className="np-label np-label-ink">工作方式</span>
-          <span className="np-label">四个环节</span>
         </div>
         <div className="step-list">
           {FLOW_STEPS.map((item) => (

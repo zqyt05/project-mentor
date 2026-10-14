@@ -71,8 +71,6 @@ export default function TopBar() {
           ) : (
             /* 版次元数据：报纸式的出版信息，替代原先的流程说明文案 */
             <div className="edition-meta">
-              <span>第 1 卷</span>
-              <span className="edition-sep">|</span>
               <span>{dayjs().format('YYYY 年 MM 月 DD 日')}</span>
               <span className="edition-sep">|</span>
               <span>本地版</span>
