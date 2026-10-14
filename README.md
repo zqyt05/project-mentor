@@ -72,12 +72,16 @@ AI 判断领域类型（技术开发类 / 通用知识类）
 
 - DDL 按任务顺序自动累加计算（项目开始日 + 累计建议天数）
 - 支持**手动调整任意任务的 DDL 日期**
-- **顺序门禁**：完成当前任务后自动解锁下一个，跳步开始会被拦截
+- **推荐顺序、但不强制**：默认按顺序推进，但任意任务都能直接开始 ——
+  学习者可以根据自己的实际情况跳着做（例如已掌握某部分，想先从后面的任务入手）
 - 进度总览：整体进度条 + 阶段进度 + 逾期提醒
 
 ### 3. 双窗口隔离式场景化答疑
 
-固定左右分栏，**左侧主任务窗口约 70%，右侧独立答疑窗口约 30%**：
+固定左右分栏，**左侧主任务窗口默认约 70%，右侧独立答疑窗口约 30%**：
+
+> 分栏比例可拖拽调整（拖动中间把手，双击恢复默认 70%）并记住你的选择；
+> 窄屏下自动改为上下堆叠。
 
 | | 左侧主任务窗口 | 右侧答疑窗口 |
 | --- | --- | --- |
@@ -132,7 +136,7 @@ AI 判断领域类型（技术开发类 / 通用知识类）
 
 ![README 展开](docs/screenshots/04-README摘要展开.png)
 
-### 任务列表（含交付标准、DDL 与顺序门禁）
+### 任务列表（含交付标准与 DDL）
 
 ![任务列表](docs/screenshots/05-任务列表.png)
 
@@ -306,7 +310,7 @@ python -m pytest -v
 | 测试文件 | 盯住什么 |
 | --- | --- |
 | `test_json_extraction.py` | LLM 输出的五重容错解析（代码块、前后废话、尾逗号、裸控制字符、截断） |
-| `test_task_workflow.py` | DDL 累加计算、顺序门禁 `locked`、进度统计边界（0 任务 / 部分完成 / 全完成） |
+| `test_task_workflow.py` | DDL 累加计算、任务可自由排序（无门禁）、进度统计边界（0 任务 / 部分完成 / 全完成） |
 | `test_api_contract.py` | 所有接口与错误都返回统一的 `{code, message, data}` 结构 |
 
 > AI 相关链路（Prompt 效果、模型输出质量）不适合用单测覆盖，
@@ -355,7 +359,7 @@ ProjectMentor/
 │   │   ├── models/                    # SQLAlchemy 数据模型
 │   │   │   ├── base.py                # 公共基类、时间戳、枚举常量
 │   │   │   ├── project.py             # 统一项目模型（GitHub / 定制共用）
-│   │   │   ├── task.py                # 阶段 Stage + 任务 Task（含顺序门禁）
+│   │   │   ├── task.py                # 阶段 Stage + 任务 Task
 │   │   │   ├── chat.py                # 会话 Conversation + 消息 Message
 │   │   │   └── review.py              # 费曼复盘 Review
 │   │   ├── schemas/                   # Pydantic 请求 / 响应模型
@@ -381,7 +385,7 @@ ProjectMentor/
 │   ├── tests/                         # 单元测试（全部离线，不依赖 API Key）
 │   │   ├── conftest.py                # 内存 SQLite 夹具
 │   │   ├── test_json_extraction.py    # LLM 输出容错解析
-│   │   ├── test_task_workflow.py      # DDL 累加 / 顺序门禁 / 进度计算
+│   │   ├── test_task_workflow.py      # DDL 累加 / 任务顺序自由 / 进度计算
 │   │   └── test_api_contract.py       # 统一响应格式与异常处理
 │   ├── requirements.txt               # 运行时依赖
 │   ├── requirements-dev.txt           # 开发依赖（pytest）
@@ -489,7 +493,7 @@ GitHub 专有字段（`repo_url` / `stars` / `language`）对定制项目为空�
 | GET | `/api/task/{id}` | 任务详情 |
 | PATCH | `/api/task/{id}` | 更新任务（DDL / 状态 / 内容） |
 | POST | `/api/task/{id}/start` | 开始当前任务 |
-| POST | `/api/task/{id}/complete` | 标记完成（自动解锁下一个） |
+| POST | `/api/task/{id}/complete` | 标记完成（返回下一个建议任务） |
 | POST | `/api/task/{id}/reset` | 重置为未开始 |
 | POST | `/api/chat/ask` | 提问（自动绑定项目 + 任务上下文） |
 | GET | `/api/chat/history` | 加载指定任务 / 复盘的对话历史 |
@@ -533,7 +537,7 @@ GitHub 专有字段（`repo_url` / `stars` / `language`）对定制项目为空�
 本项目严格按 PRD 的 MVP 边界实现。以下功能**刻意不做**，请勿视为缺陷：
 
 - 用户注册登录系统（单用户本地使用）
-- 窗口拖拽缩放、多布局切换（固定分栏比例）
+- 多布局切换（左右分栏支持拖拽调整宽度，但不提供其他布局模式）
 - 游戏化激励（XP、徽章、连续打卡）
 - 日历同步、多端同步
 - 代码在线运行沙箱
