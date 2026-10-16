@@ -141,7 +141,9 @@ export default function MainLayout() {
     <div className="app-shell">
       <TopBar />
 
-      <div className="app-body" style={{ '--np-pane-main': `${leftPercent}%` } as React.CSSProperties}>
+      {/* --pane-main 由 .pane-main 的 flex-basis/max-width 读取；
+          变量名必须与 index.css 中的定义完全一致，否则拖拽不会生效 */}
+      <div className="app-body" style={{ '--pane-main': `${leftPercent}%` } as React.CSSProperties}>
         {/* 左侧：主任务窗口（约 70%） */}
         <main className="pane-main">
           <SideMenu hasProject={hasProject} />
