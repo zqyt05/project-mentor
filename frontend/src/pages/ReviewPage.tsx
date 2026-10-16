@@ -190,7 +190,7 @@ export default function ReviewPage() {
                           <Space size={6}>
                             <Text>{item.label}</Text>
                             <Tooltip title={item.description}>
-                              <QuestionCircleOutlined style={{ color: '#bfbfbf' }} />
+                              <QuestionCircleOutlined style={{ color: 'var(--muted-foreground)' }} />
                             </Tooltip>
                           </Space>
                         </Radio>

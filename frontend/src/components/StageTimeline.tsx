@@ -23,9 +23,9 @@ interface StageTimelineProps {
 
 /** 单个任务在时间线上的图标（状态色跟随新闻纸主题） */
 function taskIcon(status: Task['status']) {
-  if (status === 'done') return <CheckCircleFilled style={{ color: '#52c41a' }} />
-  if (status === 'in_progress') return <PlayCircleFilled style={{ color: '#CC0000' }} />
-  return <ClockCircleOutlined style={{ color: '#A3A3A3' }} />
+  if (status === 'done') return <CheckCircleFilled style={{ color: 'var(--success)' }} />
+  if (status === 'in_progress') return <PlayCircleFilled style={{ color: 'var(--accent)' }} />
+  return <ClockCircleOutlined style={{ color: '#94A3B8' }} />
 }
 
 export default function StageTimeline({ stages }: StageTimelineProps) {
@@ -72,7 +72,7 @@ export default function StageTimeline({ stages }: StageTimelineProps) {
                   percent={percent}
                   size="small"
                   style={{ width: 120, marginBottom: 0 }}
-                  strokeColor={percent === 100 ? '#52c41a' : undefined}
+                  strokeColor={percent === 100 ? 'var(--success)' : undefined}
                 />
               </div>
 

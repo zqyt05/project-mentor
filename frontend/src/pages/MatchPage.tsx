@@ -98,7 +98,7 @@ export default function MatchPage() {
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/')} size="small">
               重新输入
             </Button>
-            <Title level={3} style={{ margin: 0, fontFamily: 'var(--np-serif)' }}>
+            <Title level={3} style={{ margin: 0, fontFamily: 'var(--font-display)' }}>
               「{domain}」的学习项目
             </Title>
             <Tag>{difficulty}</Tag>
@@ -154,8 +154,8 @@ export default function MatchPage() {
 
             <Progress
               percent={Math.round(progress)}
-              strokeColor="var(--np-ink)"
-              trailColor="var(--np-soft)"
+              strokeColor="var(--accent)"
+              trailColor="#F1F5F9"
               format={(percent) => (
                 <span className="np-mono" style={{ fontSize: '0.72rem' }}>
                   {percent}%

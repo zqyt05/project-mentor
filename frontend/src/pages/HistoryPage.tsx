@@ -176,7 +176,7 @@ export default function HistoryPage() {
 
                       {project.source === 'github' && project.stars != null && (
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          <StarFilled style={{ color: '#faad14' }} /> {project.stars.toLocaleString()}
+                          <StarFilled style={{ color: 'var(--warning)' }} /> {project.stars.toLocaleString()}
                           {project.language ? ` · ${project.language}` : ''}
                         </Text>
                       )}
@@ -192,7 +192,7 @@ export default function HistoryPage() {
                         size="small"
                         style={{ width: 220, marginBottom: 0 }}
                         strokeColor={
-                          (progress?.percent ?? 0) === 100 ? '#52c41a' : undefined
+                          (progress?.percent ?? 0) === 100 ? 'var(--success)' : undefined
                         }
                       />
                       <Text type="secondary" style={{ fontSize: 12 }}>

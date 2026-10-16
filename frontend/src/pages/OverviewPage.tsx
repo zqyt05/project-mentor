@@ -85,8 +85,8 @@ export default function OverviewPage() {
               <Progress
                 percent={progress?.percent ?? 0}
                 showInfo={false}
-                strokeColor="var(--np-ink)"
-                trailColor="var(--np-soft)"
+                strokeColor="var(--accent)"
+                trailColor="#F1F5F9"
                 style={{ marginBottom: 0 }}
               />
               <Text className="np-meta">

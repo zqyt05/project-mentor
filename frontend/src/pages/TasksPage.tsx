@@ -157,7 +157,7 @@ export default function TasksPage() {
                   percent={stagePercent}
                   size="small"
                   style={{ width: 140, marginBottom: 0 }}
-                  strokeColor={stagePercent === 100 ? '#52c41a' : undefined}
+                  strokeColor={stagePercent === 100 ? 'var(--success)' : undefined}
                 />
               </div>
 

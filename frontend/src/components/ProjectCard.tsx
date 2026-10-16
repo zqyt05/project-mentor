@@ -43,7 +43,7 @@ export default function ProjectCard({
       className="project-card"
       title={
         <Space size={10} wrap>
-          <Title level={4} style={{ margin: 0, fontFamily: 'var(--np-serif)' }}>
+          <Title level={4} style={{ margin: 0, fontFamily: 'var(--font-display)' }}>
             {project.name}
           </Title>
           <Tag>{isGithub ? 'GitHub 开源' : 'AI 定制'}</Tag>
@@ -53,7 +53,7 @@ export default function ProjectCard({
       extra={
         isGithub && project.stars != null ? (
           <Text className="np-meta">
-            <StarFilled style={{ color: 'var(--np-ink)' }} /> {project.stars.toLocaleString()}
+            <StarFilled style={{ color: 'var(--accent)' }} /> {project.stars.toLocaleString()}
           </Text>
         ) : null
       }
