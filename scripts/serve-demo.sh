@@ -31,11 +31,26 @@ fi
 
 PORT="${PORT:-8000}"
 
+# 口令来源优先级：命令行环境变量 > backend/.env > 无门禁
+#
+# 注意：不能写 `DEMO_PASSWORD="${DEMO_PASSWORD:-}"` 去「兜底」——
+# 那会在命令行未传时向子进程注入一个**空字符串**，
+# 而环境变量的优先级高于 .env，结果反而把 .env 里配好的口令覆盖成空，
+# 门禁静默关闭。因此这里只在命令行确实传了值时才 export。
+if [[ -z "${DEMO_PASSWORD:-}" ]]; then
+  DEMO_PASSWORD="$(grep -E '^DEMO_PASSWORD=' "$ROOT/backend/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r' | sed 's/^["'"'"']//; s/["'"'"']$//')"
+  if [[ -n "$DEMO_PASSWORD" ]]; then
+    echo "🔐 演示门禁：从 backend/.env 读取到口令"
+  fi
+fi
+
 if [[ -n "${DEMO_PASSWORD:-}" ]]; then
+  export DEMO_PASSWORD
   echo "🔐 演示门禁：已开启（访客数据互相隔离）"
 else
   echo "⚠️  演示门禁：未开启 —— 任何拿到链接的人都能使用，且共用同一份数据"
-  echo "   如需对外分享，请设置 DEMO_PASSWORD"
+  echo "   如需对外分享，请在 backend/.env 设置 DEMO_PASSWORD，或直接传参："
+  echo "   DEMO_PASSWORD='你的口令' ./scripts/serve-demo.sh"
 fi
 
 if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
@@ -48,6 +63,7 @@ echo "   接口文档：http://127.0.0.1:$PORT/docs"
 echo "   按 Ctrl+C 停止"
 echo
 
-# SERVE_FRONTEND=1 让后端托管 frontend/dist
-exec env SERVE_FRONTEND=1 DEMO_PASSWORD="${DEMO_PASSWORD:-}" \
-  "$PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+# SERVE_FRONTEND=1 让后端托管 frontend/dist（前后端同源 ⇒ 零 CORS）
+# DEMO_PASSWORD 已在上面按优先级解析并 export，这里不再重复注入
+export SERVE_FRONTEND=1
+exec "$PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
