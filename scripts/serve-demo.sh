@@ -54,7 +54,17 @@ else
 fi
 
 if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
-  echo "❌ 端口 $PORT 已被占用，请先停止占用进程或改用 PORT=8001"
+  echo "❌ 端口 $PORT 已被占用 —— 已经有一个服务在跑（可能是上次忘了关）。"
+  echo
+  echo "   当前占用者："
+  lsof -nP -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | tail -n +2 | awk '{print "     PID " $2 "  " $1}' | sort -u
+  echo
+  echo "   如果那个服务就是你想要的（演示模式），直接用即可，不必重启。"
+  echo "   想重新启动，先关掉旧的："
+  echo "     ./scripts/stop-demo.sh"
+  echo
+  echo "   或者换个端口启动："
+  echo "     PORT=8001 ./scripts/serve-demo.sh"
   exit 1
 fi
 
