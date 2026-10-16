@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.services.auth_service import current_visitor
 from app.schemas.project import (
     ProjectBrief,
     ProjectDetail,
@@ -31,33 +32,53 @@ async def match_projects(payload: ProjectMatchRequest) -> dict:
 
 
 @router.post("/start", summary="开始学习（项目落库 + 任务拆解）")
-async def start_project(payload: ProjectStartRequest, db: Session = Depends(get_db)) -> dict:
+async def start_project(
+    payload: ProjectStartRequest,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """用户点击「开始学习」：初始化项目并拆解为阶段任务与 DDL。"""
     project = await project_service.start_project(
-        db, payload.domain, payload.difficulty, payload.project
+        db,
+        payload.domain,
+        payload.difficulty,
+        payload.project,
+        visitor_id=visitor,
     )
-    detail = project_service.get_project_detail(db, project.id)
+    # 归属校验：新项目必然属于当前访客，这里传 visitor 是保持一致性
+    detail = project_service.get_project_detail(db, project.id, visitor)
     return success(detail.model_dump(), message="项目已初始化，开始学习吧")
 
 
 @router.get("/list", summary="历史学习项目列表")
-def list_projects(db: Session = Depends(get_db)) -> dict:
+def list_projects(
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """查看历史学习项目列表（PRD 模块 5 · 数据持久化）。"""
-    projects: list[ProjectBrief] = project_service.list_projects(db)
+    projects: list[ProjectBrief] = project_service.list_projects(db, visitor_id=visitor)
     return success([project.model_dump() for project in projects])
 
 
 @router.get("/{project_id}", summary="项目详情（含阶段任务时间线）")
-def get_project_detail(project_id: int, db: Session = Depends(get_db)) -> dict:
+def get_project_detail(
+    project_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """获取项目总览页所需的全部数据。"""
-    detail: ProjectDetail = project_service.get_project_detail(db, project_id)
+    detail: ProjectDetail = project_service.get_project_detail(db, project_id, visitor)
     return success(detail.model_dump())
 
 
 @router.delete("/{project_id}", summary="删除项目及其全部学习数据")
-def delete_project(project_id: int, db: Session = Depends(get_db)) -> dict:
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """删除项目（级联删除任务、对话、复盘）。MVP 仅提供删除，不做归档。"""
-    project = project_service.get_project(db, project_id)
+    project = project_service.get_project(db, project_id, visitor)
     db.delete(project)
     db.commit()
     return success({"id": project_id}, message="项目已删除")

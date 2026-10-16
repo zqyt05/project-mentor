@@ -434,7 +434,11 @@ def persist_decomposition(db: Session, project: Project, stages: list[dict[str, 
 
 
 async def start_project(
-    db: Session, domain: str, difficulty: str, candidate: ProjectCandidate
+    db: Session,
+    domain: str,
+    difficulty: str,
+    candidate: ProjectCandidate,
+    visitor_id: str | None = None,
 ) -> Project:
     """用户点击「开始学习」：落库项目并完成阶段任务初始化。"""
     project = Project(
@@ -443,6 +447,8 @@ async def start_project(
         domain=domain,
         difficulty=difficulty or candidate.difficulty,
         status=ProjectStatus.LEARNING,
+        # 归属当前访客；门禁关闭时为 None（本机所有者）
+        owner_id=visitor_id,
         summary=candidate.summary,
         background=candidate.background,
         goals=candidate.goals,
@@ -515,17 +521,31 @@ def compute_progress(project: Project) -> ProgressOut:
     )
 
 
-def get_project(db: Session, project_id: int) -> Project:
-    """按 ID 读取项目（含阶段与任务），不存在则报错。"""
+def get_project(db: Session, project_id: int, visitor_id: str | None = None) -> Project:
+    """按 ID 读取项目（含阶段与任务），不存在则报错。
+
+    这是读取项目的**唯一入口**，因此把访客归属校验放在这里收口 ——
+    所有项目级/任务级接口最终都会走到这个函数，不必逐个补检查。
+
+    `visitor_id` 为 None 表示门禁关闭（本地单用户模式），此时不做归属过滤。
+
+    归属不符时返回 **404 而不是 403**：403 等于告诉对方「这个 id 存在但你没权限」，
+    会泄露项目的存在性；404 让越权访问与「不存在」不可区分。
+    """
     project = db.get(Project, project_id)
     if project is None:
+        raise BusinessError(f"项目不存在（id={project_id}）", CODE_NOT_FOUND)
+    if visitor_id is not None and project.owner_id != visitor_id:
+        # 刻意使用与「不存在」完全相同的提示，避免泄露存在性
         raise BusinessError(f"项目不存在（id={project_id}）", CODE_NOT_FOUND)
     return project
 
 
-def get_project_detail(db: Session, project_id: int) -> ProjectDetail:
+def get_project_detail(
+    db: Session, project_id: int, visitor_id: str | None = None
+) -> ProjectDetail:
     """读取项目详情并附带进度信息。"""
-    project = get_project(db, project_id)
+    project = get_project(db, project_id, visitor_id)
     detail = ProjectDetail.model_validate(project)
     detail.progress = compute_progress(project)
     # 按阶段顺序与任务顺序稳定输出
@@ -536,14 +556,21 @@ def get_project_detail(db: Session, project_id: int) -> ProjectDetail:
     return detail
 
 
-def list_projects(db: Session, limit: int = 100) -> list[ProjectBrief]:
-    """查看历史学习项目列表（按更新时间倒序）。"""
+def list_projects(
+    db: Session, limit: int = 100, visitor_id: str | None = None
+) -> list[ProjectBrief]:
+    """查看历史学习项目列表（按更新时间倒序）。
+
+    `visitor_id` 非 None 时只返回该访客自己的项目（演示模式的隔离）。
+    """
     stmt = (
         select(Project)
         .options(selectinload(Project.tasks), selectinload(Project.stages))
         .order_by(Project.updated_at.desc())
         .limit(limit)
     )
+    if visitor_id is not None:
+        stmt = stmt.where(Project.owner_id == visitor_id)
     projects = db.execute(stmt).scalars().all()
     briefs: list[ProjectBrief] = []
     for project in projects:

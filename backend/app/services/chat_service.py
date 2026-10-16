@@ -95,10 +95,14 @@ def _load_history(db: Session, conversation: Conversation) -> list[Message]:
 
 
 def get_history(
-    db: Session, project_id: int, task_id: int | None, scope: str
+    db: Session,
+    project_id: int,
+    task_id: int | None,
+    scope: str,
+    visitor_id: str | None = None,
 ) -> ChatHistoryOut:
     """加载某个任务 / 复盘作用域下的历史对话（切换任务时由右窗口调用）。"""
-    project = get_project(db, project_id)
+    project = get_project(db, project_id, visitor_id)
 
     if scope == ConversationScope.TASK:
         if task_id is None:
@@ -130,9 +134,15 @@ def get_history(
     )
 
 
-def clear_history(db: Session, project_id: int, task_id: int | None, scope: str) -> int:
+def clear_history(
+    db: Session,
+    project_id: int,
+    task_id: int | None,
+    scope: str,
+    visitor_id: str | None = None,
+) -> int:
     """清空当前作用域的对话记录，返回删除的消息条数。"""
-    project = get_project(db, project_id)
+    project = get_project(db, project_id, visitor_id)
     stmt = select(Conversation).where(
         Conversation.project_id == project.id,
         Conversation.scope == scope,
@@ -173,9 +183,10 @@ async def ask(
     task_id: int | None,
     scope: str,
     question: str,
+    visitor_id: str | None = None,
 ) -> ChatAskResponse:
     """答疑主流程：拼装上下文 → 调用 LLM → 落库 → 返回回答。"""
-    project = get_project(db, project_id)
+    project = get_project(db, project_id, visitor_id)
     question = question.strip()
     if not question:
         raise BusinessError("问题内容不能为空")

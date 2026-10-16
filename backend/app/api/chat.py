@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.services.auth_service import current_visitor
 from app.schemas.chat import ChatAskRequest
 from app.services import chat_service
 from app.utils.response import success
@@ -18,7 +19,11 @@ router = APIRouter(prefix="/api/chat", tags=["场景化答疑"])
 
 
 @router.post("/ask", summary="提问（自动绑定项目 + 任务上下文）")
-async def ask(payload: ChatAskRequest, db: Session = Depends(get_db)) -> dict:
+async def ask(
+    payload: ChatAskRequest,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """提交问题，返回导师回答。
 
     - `scope=task`：绑定 `task_id` 对应任务的上下文与历史对话
@@ -30,6 +35,7 @@ async def ask(payload: ChatAskRequest, db: Session = Depends(get_db)) -> dict:
         task_id=payload.task_id,
         scope=payload.scope,
         question=payload.clean_question,
+        visitor_id=visitor,
     )
     return success(result.model_dump(), message="已回答")
 
@@ -40,9 +46,10 @@ def history(
     task_id: int | None = Query(default=None, description="任务 ID（scope=task 时必填）"),
     scope: str = Query(default="task", pattern="^(task|review)$", description="作用域"),
     db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
 ) -> dict:
     """切换任务时，右侧答疑窗口调用本接口加载对应任务的独立对话记录。"""
-    result = chat_service.get_history(db, project_id, task_id, scope)
+    result = chat_service.get_history(db, project_id, task_id, scope, visitor)
     return success(result.model_dump())
 
 
@@ -52,7 +59,8 @@ def clear_history(
     task_id: int | None = Query(default=None, description="任务 ID"),
     scope: str = Query(default="task", pattern="^(task|review)$"),
     db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
 ) -> dict:
     """清空指定作用域的对话记录，不影响其他任务与主窗口内容。"""
-    count = chat_service.clear_history(db, project_id, task_id, scope)
+    count = chat_service.clear_history(db, project_id, task_id, scope, visitor)
     return success({"deleted": count}, message=f"已清空 {count} 条对话记录")

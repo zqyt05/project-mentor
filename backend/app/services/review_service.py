@@ -54,8 +54,12 @@ def get_guide() -> dict:
     return {"forms": REVIEW_FORMS, "questions": REVIEW_QUESTIONS}
 
 
-def get_latest_review(db: Session, project_id: int) -> Review | None:
+def get_latest_review(
+    db: Session, project_id: int, visitor_id: str | None = None
+) -> Review | None:
     """读取项目最近一次复盘记录。"""
+    # 先校验归属，避免越权读取他人的复盘内容
+    get_project(db, project_id, visitor_id)
     stmt = (
         select(Review)
         .where(Review.project_id == project_id)
@@ -65,19 +69,25 @@ def get_latest_review(db: Session, project_id: int) -> Review | None:
     return db.execute(stmt).scalars().first()
 
 
-def get_review_or_404(db: Session, project_id: int) -> Review:
+def get_review_or_404(
+    db: Session, project_id: int, visitor_id: str | None = None
+) -> Review:
     """读取复盘记录，不存在时给出友好提示。"""
-    review = get_latest_review(db, project_id)
+    review = get_latest_review(db, project_id, visitor_id)
     if review is None:
         raise BusinessError("该项目还没有复盘记录，请先提交复盘内容", CODE_NOT_FOUND)
     return review
 
 
 async def generate_review(
-    db: Session, project_id: int, form: str, user_content: str
+    db: Session,
+    project_id: int,
+    form: str,
+    user_content: str,
+    visitor_id: str | None = None,
 ) -> Review:
     """提交用户复盘内容，调用 LLM 纠错补全并生成最终文档。"""
-    project = get_project(db, project_id)
+    project = get_project(db, project_id, visitor_id)
     user_content = user_content.strip()
     if not user_content:
         raise BusinessError("复盘内容不能为空")

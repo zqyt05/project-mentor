@@ -10,16 +10,24 @@ from app.database import get_db
 from app.models import Task, TaskStatus, utcnow
 from app.schemas.task import ProgressOut, StageOut, TaskOut, TaskUpdateRequest
 from app.services import project_service
+from app.services.auth_service import current_visitor
 from app.utils.response import CODE_NOT_FOUND, BusinessError, success
 
 router = APIRouter(prefix="/api/task", tags=["任务与 DDL 管理"])
 
 
-def _get_task(db: Session, task_id: int) -> Task:
-    """读取任务，不存在则报错。"""
+def _get_task(db: Session, task_id: int, visitor_id: str | None = None) -> Task:
+    """读取任务，不存在则报错。
+
+    任务本身没有归属字段，归属来自它所属的项目 —— 因此这里通过
+    `project_service.get_project` 走同一个收口点做归属校验，
+    避免出现「项目级接口有校验、任务级接口没有」的越权缺口。
+    """
     task = db.get(Task, task_id)
     if task is None:
         raise BusinessError(f"任务不存在（id={task_id}）", CODE_NOT_FOUND)
+    # 归属校验（门禁关闭时 visitor_id 为 None，直接跳过）
+    project_service.get_project(db, task.project_id, visitor_id)
     return task
 
 
@@ -28,9 +36,13 @@ def _serialize(task: Task) -> dict:
 
 
 @router.get("/project/{project_id}/stages", summary="获取项目的阶段任务时间线")
-def list_stages(project_id: int, db: Session = Depends(get_db)) -> dict:
+def list_stages(
+    project_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """按阶段顺序返回任务列表，供左侧主窗口的任务列表页使用。"""
-    project = project_service.get_project(db, project_id)
+    project = project_service.get_project(db, project_id, visitor)
     stages = sorted(project.stages, key=lambda stage: stage.order_index)
     payload = []
     for stage in stages:
@@ -41,24 +53,35 @@ def list_stages(project_id: int, db: Session = Depends(get_db)) -> dict:
 
 
 @router.get("/project/{project_id}/progress", summary="获取项目整体进度")
-def get_progress(project_id: int, db: Session = Depends(get_db)) -> dict:
+def get_progress(
+    project_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """返回整体进度条所需的统计数据。"""
-    project = project_service.get_project(db, project_id)
+    project = project_service.get_project(db, project_id, visitor)
     progress: ProgressOut = project_service.compute_progress(project)
     return success(progress.model_dump())
 
 
 @router.get("/{task_id}", summary="获取任务详情")
-def get_task(task_id: int, db: Session = Depends(get_db)) -> dict:
-    return success(_serialize(_get_task(db, task_id)))
+def get_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
+    return success(_serialize(_get_task(db, task_id, visitor)))
 
 
 @router.patch("/{task_id}", summary="更新任务（DDL / 状态 / 内容）")
 def update_task(
-    task_id: int, payload: TaskUpdateRequest, db: Session = Depends(get_db)
+    task_id: int,
+    payload: TaskUpdateRequest,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
 ) -> dict:
     """支持用户手动调整 DDL 日期、任务状态与描述内容。"""
-    task = _get_task(db, task_id)
+    task = _get_task(db, task_id, visitor)
 
     if payload.name is not None:
         task.name = payload.name.strip() or task.name
@@ -78,7 +101,7 @@ def update_task(
     db.commit()
     db.refresh(task)
 
-    project = project_service.get_project(db, task.project_id)
+    project = project_service.get_project(db, task.project_id, visitor)
     project_service.refresh_project_status(db, project)
     return success(_serialize(task), message="任务已更新")
 
@@ -103,18 +126,22 @@ def _apply_status(task: Task, status: str) -> None:
 
 
 @router.post("/{task_id}/start", summary="开始当前任务")
-def start_task(task_id: int, db: Session = Depends(get_db)) -> dict:
+def start_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """任务状态变为「进行中」，返回更新后的任务与项目进度。
 
     右侧答疑窗口会随之把上下文切换为该任务。
     """
-    task = _get_task(db, task_id)
+    task = _get_task(db, task_id, visitor)
     _apply_status(task, TaskStatus.IN_PROGRESS)
     task.updated_at = utcnow()
     db.commit()
     db.refresh(task)
 
-    project = project_service.get_project(db, task.project_id)
+    project = project_service.get_project(db, task.project_id, visitor)
     progress = project_service.compute_progress(project)
     return success(
         {"task": _serialize(task), "progress": progress.model_dump()},
@@ -123,15 +150,19 @@ def start_task(task_id: int, db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/{task_id}/complete", summary="标记任务完成")
-def complete_task(task_id: int, db: Session = Depends(get_db)) -> dict:
+def complete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """标记任务完成并自动解锁下一个任务；全部完成时项目进入复盘环节。"""
-    task = _get_task(db, task_id)
+    task = _get_task(db, task_id, visitor)
     _apply_status(task, TaskStatus.DONE)
     task.updated_at = utcnow()
     db.commit()
     db.refresh(task)
 
-    project = project_service.get_project(db, task.project_id)
+    project = project_service.get_project(db, task.project_id, visitor)
     project_service.refresh_project_status(db, project)
     db.refresh(project)
 
@@ -162,14 +193,18 @@ def complete_task(task_id: int, db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/{task_id}/reset", summary="重置任务为未开始")
-def reset_task(task_id: int, db: Session = Depends(get_db)) -> dict:
+def reset_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """把任务退回「未开始」（用户误点完成时使用）。"""
-    task = _get_task(db, task_id)
+    task = _get_task(db, task_id, visitor)
     _apply_status(task, TaskStatus.TODO)
     task.updated_at = utcnow()
     db.commit()
     db.refresh(task)
 
-    project = project_service.get_project(db, task.project_id)
+    project = project_service.get_project(db, task.project_id, visitor)
     project_service.refresh_project_status(db, project)
     return success(_serialize(task), message="任务已重置为未开始")
