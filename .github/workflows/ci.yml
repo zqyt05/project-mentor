@@ -32,6 +32,13 @@ jobs:
       - name: 安装依赖
         run: pip install -r requirements-dev.txt
 
+      - name: 静态检查（未定义名字等语义问题）
+        # 只跑 flake8 的 F 类检查（语义），配置见 backend/.flake8。
+        # 重点是 F821 undefined name：函数体引用了签名里没声明的变量
+        #（如忘记加 db / visitor 依赖）—— 这类缺陷只在对应接口被真正
+        # 调用时才暴露为 500，单测不覆盖该路径就发现不了。
+        run: python -m flake8 app/ tests/
+
       - name: 导入检查（捕获语法错误与循环导入）
         run: python -c "from app.main import app; print('导入成功：', app.title)"
 

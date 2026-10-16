@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.models import (
     Conversation,
@@ -22,7 +22,6 @@ from app.models import (
     Message,
     MessageRole,
     Project,
-    ProjectStatus,
     Review,
     Task,
 )

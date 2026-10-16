@@ -21,18 +21,23 @@ from app.database import Base
 
 @pytest.fixture(autouse=True)
 def _isolate_settings(monkeypatch: pytest.MonkeyPatch) -> None:
-    """把演示开关固定为「关闭」，让用例不依赖开发者本地的 .env。
+    """把所有配置重置为**默认值**，让用例完全不依赖开发者本地的 .env。
 
-    背景：`Settings` 会读取 backend/.env。一旦开发者在本地配了
-    DEMO_PASSWORD（分享给朋友试用时必然要配），门禁就会在测试里也生效，
-    所有契约用例都会收到 401 而莫名失败 —— 测试结果被本地配置左右。
+    背景：`Settings` 会读取 backend/.env。开发者在本地配置演示相关开关后
+    （分享给朋友试用时必然要配），这些值会漏进测试，导致用例莫名失败 ——
+    测试结果被本地配置左右。
 
-    需要测试门禁开启行为的用例，用 `enable_gate` 夹具显式打开。
+    这里刻意**逐字段重置为默认值**，而不是只把某几个开关设为空：
+    早期版本只处理了 DEMO_PASSWORD，后来新增 DAILY_LLM_CALL_LIMIT 时
+    就漏掉了，同样的坑又踩了一次。逐字段重置可以让新增字段自动被覆盖。
+
+    需要开启门禁的用例用 `enable_gate` 夹具显式打开。
     """
-    from app.config import settings
+    from app.config import Settings, settings
 
-    monkeypatch.setattr(settings, "DEMO_PASSWORD", "")
-    monkeypatch.setattr(settings, "SERVE_FRONTEND", False)
+    defaults = Settings(_env_file=None)  # 不读 .env，拿到纯默认值
+    for field in Settings.model_fields:
+        monkeypatch.setattr(settings, field, getattr(defaults, field))
 
 
 @pytest.fixture()

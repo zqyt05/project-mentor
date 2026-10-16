@@ -21,7 +21,11 @@ router = APIRouter(prefix="/api/project", tags=["项目匹配与生成"])
 
 
 @router.post("/match", summary="双路径项目智能匹配")
-async def match_projects(payload: ProjectMatchRequest) -> dict:
+async def match_projects(
+    payload: ProjectMatchRequest,
+    db: Session = Depends(get_db),
+    visitor: str | None = Depends(current_visitor),
+) -> dict:
     """输入学习方向 + 难度，返回项目卡片列表。
 
     - 技术类方向 → GitHub 开源项目检索（路径 A）

@@ -23,6 +23,7 @@ from string import Template
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from sqlalchemy.orm import Session
 from langchain_openai import ChatOpenAI
 
 from app.config import PROMPTS_DIR, settings
@@ -193,6 +194,12 @@ class LLMService:
             若允许省略就等于给了一条绕过限制的路径。同时也让依赖显式可见。
         :param json_mode: 为 True 时启用 DeepSeek 的 JSON 输出模式
         """
+        # 延迟导入：usage_service 与 llm_service 同属 services 包，
+        # 而 services/__init__.py 会反过来导入 llm_service，
+        # 模块级导入会卷入包初始化顺序问题。放到函数内最稳妥，
+        # 代价只是 sys.modules 的一次字典查找。
+        from app.services import usage_service
+
         usage_service.consume_or_raise(db)
 
         messages = [

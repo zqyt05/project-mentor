@@ -131,3 +131,109 @@ class TestUsageEndpoint:
         body = client.get("/api/auth/usage").json()
         assert body["code"] == 0
         assert "used" in body["data"]
+
+
+class _FakeResponse:
+    """模拟 LangChain 的返回对象。"""
+
+    def __init__(self, content: str = "{}") -> None:
+        self.content = content
+
+
+class _FakeClient:
+    """替身 LLM 客户端：不发网络请求，但记录被调用了几次。"""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def ainvoke(self, _messages, **_kwargs) -> _FakeResponse:
+        self.calls += 1
+        return _FakeResponse()
+
+
+class TestQuotaWiredIntoLlmCalls:
+    """配额必须真的挂在 LLM 调用路径上，而不只是一个孤立的可用函数。
+
+    这组用例是为了补一个真实存在的测试盲区：
+    其他测试都把 LLM 替换成了替身，因此 `acomplete` 内部的配额调用
+    从未被真正执行过 —— 曾有一个 `NameError: usage_service 未定义`
+    就是这样溜过全部测试、直到手动跑真实请求才暴露。
+    """
+
+    def _patch_client(self, monkeypatch) -> _FakeClient:
+        from app.services.llm_service import get_llm_service
+
+        fake = _FakeClient()
+        service = get_llm_service()
+        monkeypatch.setattr(service, "_client", fake)
+        return fake
+
+    def test_acomplete_consumes_quota(self, db: Session, monkeypatch) -> None:
+        """每调用一次 acomplete，配额计数就 +1。"""
+        import asyncio
+
+        from app.config import settings
+        from app.services.llm_service import get_llm_service
+
+        monkeypatch.setattr(settings, "DAILY_LLM_CALL_LIMIT", 10)
+        self._patch_client(monkeypatch)
+
+        service = get_llm_service()
+        asyncio.run(service.acomplete("系统", "问题", db=db))
+        asyncio.run(service.acomplete("系统", "问题", db=db))
+
+        assert usage_service.get_used(db) == 2
+
+    def test_acomplete_json_also_consumes(self, db: Session, monkeypatch) -> None:
+        """acomplete_json 走 acomplete，因此同样受配额约束。"""
+        import asyncio
+
+        from app.config import settings
+        from app.services.llm_service import get_llm_service
+
+        monkeypatch.setattr(settings, "DAILY_LLM_CALL_LIMIT", 10)
+        self._patch_client(monkeypatch)
+
+        service = get_llm_service()
+        asyncio.run(service.acomplete_json("系统", "问题", db=db))
+
+        assert usage_service.get_used(db) == 1
+
+    def test_blocked_before_calling_model(self, db: Session, monkeypatch) -> None:
+        """超限时必须**在发起请求之前**挡下 —— 否则钱已经花了。"""
+        import asyncio
+
+        from app.config import settings
+        from app.services.llm_service import get_llm_service
+        from app.utils.response import BusinessError
+
+        monkeypatch.setattr(settings, "DAILY_LLM_CALL_LIMIT", 1)
+        fake = self._patch_client(monkeypatch)
+        service = get_llm_service()
+
+        asyncio.run(service.acomplete("系统", "问题", db=db))
+        assert fake.calls == 1
+
+        try:
+            asyncio.run(service.acomplete("系统", "问题", db=db))
+            raise AssertionError("第二次调用本应被配额拦下")
+        except BusinessError:
+            pass
+
+        # 关键断言：模型只被真正调用过一次，第二次在花钱之前就被拦住了
+        assert fake.calls == 1
+
+    def test_unlimited_does_not_block(self, db: Session, monkeypatch) -> None:
+        """默认不限制时，LLM 调用完全不受影响。"""
+        import asyncio
+
+        from app.services.llm_service import get_llm_service
+
+        fake = self._patch_client(monkeypatch)
+        service = get_llm_service()
+
+        for _ in range(5):
+            asyncio.run(service.acomplete("系统", "问题", db=db))
+
+        assert fake.calls == 5
+        assert usage_service.get_used(db) == 0

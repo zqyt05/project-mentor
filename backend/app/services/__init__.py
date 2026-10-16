@@ -10,6 +10,7 @@ from app.services import (
     llm_service,
     project_service,
     review_service,
+    usage_service,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "llm_service",
     "project_service",
     "review_service",
+    "usage_service",
 ]

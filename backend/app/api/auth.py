@@ -11,11 +11,11 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, Response
 from pydantic import BaseModel, Field
 
+from sqlalchemy.orm import Session
+
 from app.database import get_db
 from app.services import auth_service, usage_service
 from app.utils.response import BusinessError, success
-from sqlalchemy.orm import Session
-from fastapi import Depends
 
 router = APIRouter(prefix="/api/auth", tags=["演示门禁"])
 
