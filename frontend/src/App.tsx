@@ -22,73 +22,73 @@ import HistoryPage from '@/pages/HistoryPage'
 
 dayjs.locale('zh-cn')
 
-/** 新闻纸调色板（与 index.css 中的 CSS 变量保持一致） */
-const PAPER = '#F9F9F7'
-const INK = '#111111'
-const SOFT = '#E5E5E0'
+/** 设计令牌（与 index.css 中的 CSS 变量保持一致） */
+const BACKGROUND = '#FAFAFA'
+const FOREGROUND = '#0F172A'
+const MUTED_FOREGROUND = '#64748B'
+const ACCENT = '#0052FF'
+const BORDER = '#E2E8F0'
+const CARD = '#FFFFFF'
+
+const FONT_SANS = "'Inter', system-ui, -apple-system, 'PingFang SC', sans-serif"
 
 export default function App() {
   return (
     <ConfigProvider
       locale={zhCN}
       theme={{
-        // 不使用 AntD 的默认/紧凑算法做视觉决策，全部交给 token + CSS
         token: {
-          colorPrimary: INK,
-          colorInfo: INK,
-          colorLink: INK,
-          colorText: INK,
-          colorTextHeading: INK,
-          colorTextSecondary: '#525252',
-          colorBgBase: PAPER,
-          colorBgContainer: PAPER,
-          colorBgElevated: PAPER,
-          colorBorder: INK,
-          colorBorderSecondary: SOFT,
-          // 纯粹几何：处处零圆角
-          borderRadius: 0,
-          borderRadiusLG: 0,
-          borderRadiusSM: 0,
-          borderRadiusXS: 0,
-          // 扁平设计：无柔和投影
-          boxShadow: 'none',
-          boxShadowSecondary: 'none',
-          boxShadowTertiary: 'none',
-          fontFamily:
-            "'Inter', 'Helvetica Neue', 'PingFang SC', 'Microsoft YaHei', sans-serif",
-          fontSize: 14,
+          colorPrimary: ACCENT,
+          colorInfo: ACCENT,
+          colorLink: ACCENT,
+          colorText: FOREGROUND,
+          colorTextHeading: FOREGROUND,
+          colorTextSecondary: MUTED_FOREGROUND,
+          colorBgBase: BACKGROUND,
+          colorBgContainer: CARD,
+          colorBgElevated: CARD,
+          colorBorder: BORDER,
+          colorBorderSecondary: BORDER,
+          colorError: '#EF4444',
+          colorSuccess: '#10B981',
+          colorWarning: '#F59E0B',
+          // 圆角：modern soft UI
+          borderRadius: 12,
+          borderRadiusLG: 16,
+          borderRadiusSM: 8,
+          borderRadiusXS: 6,
+          // 分层阴影交给 CSS，这里只保证 AntD 默认不带重描边
+          fontFamily: FONT_SANS,
+          fontSize: 15,
           lineHeight: 1.625,
+          controlHeight: 38,
           wireframe: false,
         },
         components: {
-          Card: {
-            borderRadiusLG: 0,
-            paddingLG: 16,
-            boxShadowTertiary: 'none',
-            colorBorderSecondary: INK,
-          },
+          Card: { borderRadiusLG: 16, paddingLG: 22 },
           Button: {
-            borderRadius: 0,
-            borderRadiusLG: 0,
-            borderRadiusSM: 0,
+            borderRadius: 12,
+            borderRadiusLG: 12,
+            borderRadiusSM: 8,
             primaryShadow: 'none',
             defaultShadow: 'none',
             dangerShadow: 'none',
+            fontWeight: 500,
           },
-          Input: { borderRadius: 0, activeShadow: 'none' },
-          Progress: { defaultColor: INK, remainingColor: SOFT },
-          Tag: { borderRadiusSM: 0, defaultBg: 'transparent' },
+          Input: { borderRadius: 12, activeShadow: 'none' },
+          Progress: { defaultColor: ACCENT, remainingColor: '#F1F5F9' },
+          Tag: { borderRadiusSM: 999 },
           Menu: {
-            itemBorderRadius: 0,
-            itemSelectedBg: INK,
-            itemSelectedColor: PAPER,
-            itemHoverBg: SOFT,
-            itemColor: INK,
+            itemBorderRadius: 12,
+            itemSelectedBg: ACCENT,
+            itemSelectedColor: '#FFFFFF',
+            itemHoverBg: '#F1F5F9',
+            itemColor: MUTED_FOREGROUND,
           },
-          Modal: { borderRadiusLG: 0 },
-          Alert: { borderRadiusLG: 0 },
-          Segmented: { borderRadius: 0, itemSelectedBg: INK, itemSelectedColor: PAPER },
-          Collapse: { borderRadiusLG: 0, headerPadding: '11px 14px' },
+          Modal: { borderRadiusLG: 20 },
+          Alert: { borderRadiusLG: 12 },
+          Segmented: { borderRadius: 12, itemSelectedBg: CARD, itemSelectedColor: ACCENT },
+          Collapse: { borderRadiusLG: 12, headerPadding: '12px 16px' },
         },
       }}
     >
@@ -96,8 +96,11 @@ export default function App() {
       <AntdApp>
         <BrowserRouter>
           <Routes>
+            {/* 首页：极简全屏，不套双窗口外壳 */}
+            <Route path="/" element={<HomePage />} />
+
+            {/* 其余页面：左右双窗口布局 */}
             <Route element={<MainLayout />}>
-              <Route path="/" element={<HomePage />} />
               <Route path="/match" element={<MatchPage />} />
               <Route path="/history" element={<HistoryPage />} />
               <Route path="/project/:projectId" element={<Navigate to="overview" replace />} />
