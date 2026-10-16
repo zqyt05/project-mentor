@@ -32,10 +32,21 @@ engine = create_engine(
 
 @event.listens_for(engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
-    """开启 SQLite 外键约束（默认关闭），保证级联删除生效。"""
+    """SQLite 连接建立时设置 PRAGMA。
+
+    1. `foreign_keys=ON`：SQLite 默认关闭外键约束，不开启则级联删除不生效。
+    2. `journal_mode=WAL`：写前日志模式。默认的 DELETE 模式下写操作会阻塞读，
+       演示场景中多个朋友同时点击（例如同时打开项目总览）容易撞出
+       「database is locked」。WAL 允许读写并发，显著降低锁冲突。
+    3. `busy_timeout`：遇到锁时等待 5 秒再报错，而不是立刻失败。
+    """
     if settings.DATABASE_URL.startswith("sqlite"):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        # WAL 下适当放宽同步频率，换取并发写入时的吞吐
+        cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.close()
 
 

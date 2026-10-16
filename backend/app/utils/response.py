@@ -75,7 +75,15 @@ def register_exception_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         message = exc.detail if isinstance(exc.detail, str) else "请求失败"
         code = CODE_NOT_FOUND if exc.status_code == status.HTTP_404_NOT_FOUND else exc.status_code
-        return _json(code, message)
+        # 401 必须回传真实的 HTTP 状态码：前端 axios 拦截器依赖 HTTP 层判断
+        # 「演示门禁失效」并跳回登录页。其余错误仍以 HTTP 200 + code 表达，
+        # 保持既有契约不变。
+        http_status = (
+            status.HTTP_401_UNAUTHORIZED
+            if exc.status_code == status.HTTP_401_UNAUTHORIZED
+            else 200
+        )
+        return _json(code, message, http_status=http_status)
 
     @app.exception_handler(Exception)
     async def _unhandled_error_handler(_request: Request, exc: Exception) -> JSONResponse:

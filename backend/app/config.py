@@ -52,6 +52,14 @@ class Settings(BaseSettings):
     # 注意：SQLAlchemy 的 sqlite 绝对路径需要四个斜杠（sqlite:////abs/path）。
     DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'projectmentor.db'}"
 
+    # ===== 演示模式（公网分享给他人试用时开启）=====
+    # 为空 = 门禁关闭，行为与本地单用户模式完全一致（默认）。
+    # 填入任意口令即开启：访客需先输入口令，且各自的项目互相隔离。
+    # 该字段同时用作访客 Cookie 的签名密钥。
+    DEMO_PASSWORD: str = ""
+    # 是否由后端托管前端构建产物（生产同源部署用，免 CORS）
+    SERVE_FRONTEND: bool = False
+
     # ===== CORS =====
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 

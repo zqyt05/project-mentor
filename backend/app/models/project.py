@@ -25,6 +25,11 @@ class Project(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
 
+    # ===== 访客归属（演示模式下的轻量隔离）=====
+    # None 表示「本机所有者」—— 门禁关闭时创建的本地数据。
+    # 门禁开启后，每个访客只能看到 owner_id 等于自己的项目。
+    owner_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+
     # ===== 基本信息 =====
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     source: Mapped[str] = mapped_column(String(20), nullable=False, default=ProjectSource.CUSTOM)
