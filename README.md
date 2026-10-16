@@ -356,7 +356,9 @@ DEMO_PASSWORD='你的口令' ./scripts/serve-demo.sh  # 3. 生产模式启动（
 三点必须知道的事：
 
 1. **你的电脑就是服务器** —— 关机/休眠/关闭隧道终端都会让链接失效
-2. **必须先在 DeepSeek 控制台设置消费上限** —— 你的 Key 为所有访客付费
+2. **注意 AI 费用** —— 你的 Key 为所有访客付费。DeepSeek **不提供消费上限**，
+   建议「只充值小额」（余额即硬上限），并设置应用层的每日调用上限：
+   `DAILY_LLM_CALL_LIMIT=80`（0 = 不限制，本地默认）
 3. **不要用 Vercel/Netlify/Render 免费层** —— `POST /api/project/start` 实测约 51 秒，
    会撞上这些平台的函数超时；Cloudflare 隧道（100s）才能跑通
 

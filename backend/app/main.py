@@ -43,6 +43,11 @@ async def lifespan(_app: FastAPI):
         logger.info("演示门禁：已开启（访客数据互相隔离）")
     else:
         logger.info("演示门禁：未开启（本地单用户模式）")
+    if settings.DAILY_LLM_CALL_LIMIT > 0:
+        logger.info("每日 AI 调用上限：%s 次（超出后拒绝新的 AI 请求）",
+                    settings.DAILY_LLM_CALL_LIMIT)
+    else:
+        logger.info("每日 AI 调用上限：未设置（AI 调用不受限制）")
     yield
     await get_github_service().aclose()
     logger.info("服务已关闭")

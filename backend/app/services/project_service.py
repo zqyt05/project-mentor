@@ -100,7 +100,7 @@ _CUSTOM_RESULT_COUNT = 3
 # ======================================================================
 
 
-async def classify_domain(domain: str) -> dict[str, Any]:
+async def classify_domain(domain: str, db: Session) -> dict[str, Any]:
     """调用 LLM 判断学习方向类型，并产出 GitHub 检索所需的关键词与语言。
 
     返回：{category, reason, search_keywords, language, custom_hint}
@@ -109,6 +109,7 @@ async def classify_domain(domain: str) -> dict[str, Any]:
     payload = await llm.acomplete_json(
         system_prompt="你是一个严谨的学习方向分析器，只输出 JSON。",
         user_prompt=render_prompt("domain_route", domain=domain),
+    db=db,
     )
     if not isinstance(payload, dict):
         raise BusinessError("领域判断结果格式异常，请重试")
@@ -153,7 +154,11 @@ def _candidate_from_repo(repo: GithubRepo, generated: dict[str, Any], difficulty
 
 
 async def match_github_projects(
-    domain: str, difficulty: str, keywords: str, language: str | None
+    domain: str,
+    difficulty: str,
+    keywords: str,
+    language: str | None,
+    db: Session,
 ) -> list[ProjectCandidate]:
     """路径 A：检索 GitHub 优质项目，并按难度匹配度排序输出 Top N。"""
     github = get_github_service()
@@ -188,6 +193,7 @@ async def match_github_projects(
             difficulty=difficulty,
             candidates=github.render_candidates(repo_pool),
         ),
+    db=db,
     )
 
     evaluated = payload.get("projects", []) if isinstance(payload, dict) else []
@@ -222,7 +228,10 @@ async def match_github_projects(
 
 
 async def generate_custom_projects(
-    domain: str, difficulty: str, count: int = _CUSTOM_RESULT_COUNT
+    domain: str,
+    difficulty: str,
+    count: int = _CUSTOM_RESULT_COUNT,
+    db: Session | None = None,
 ) -> list[ProjectCandidate]:
     """路径 B：调用 LLM 生成定制化实战项目。
 
@@ -236,6 +245,7 @@ async def generate_custom_projects(
         user_prompt=render_prompt(
             "custom_project", domain=domain, difficulty=difficulty, count=str(count)
         ),
+    db=db,
     )
 
     raw_projects = payload.get("projects", []) if isinstance(payload, dict) else []
@@ -270,14 +280,16 @@ async def generate_custom_projects(
 # ======================================================================
 
 
-async def match_projects(domain: str, difficulty: str) -> ProjectMatchResponse:
+async def match_projects(
+    domain: str, difficulty: str, db: Session
+) -> ProjectMatchResponse:
     """项目智能匹配主流程：领域判断 → 双路径路由 → 输出候选项目卡片。"""
-    route = await classify_domain(domain)
+    route = await classify_domain(domain, db)
 
     if route["category"] == "technical":
         keywords = route["search_keywords"] or domain
         github_candidates = await match_github_projects(
-            domain, difficulty, keywords, route["language"]
+            domain, difficulty, keywords, route["language"], db=db
         )
 
         # GitHub 优质项目不足时，用 AI 定制项目补齐差额，而不是整体丢弃。
@@ -293,7 +305,9 @@ async def match_projects(domain: str, difficulty: str) -> ProjectMatchResponse:
                 projects=github_candidates,
             )
 
-        custom = await generate_custom_projects(domain, difficulty, count=shortage)
+        custom = await generate_custom_projects(
+            domain, difficulty, count=shortage, db=db
+        )
 
         if github_candidates:
             return ProjectMatchResponse(
@@ -317,7 +331,7 @@ async def match_projects(domain: str, difficulty: str) -> ProjectMatchResponse:
             projects=custom,
         )
 
-    custom = await generate_custom_projects(domain, difficulty)
+    custom = await generate_custom_projects(domain, difficulty, db=db)
     hint = route.get("custom_hint") or ""
     return ProjectMatchResponse(
         path=ProjectSource.CUSTOM,
@@ -360,7 +374,7 @@ def _build_project_info(project: Project) -> str:
     return "\n".join(lines)
 
 
-async def decompose_project(project: Project) -> list[dict[str, Any]]:
+async def decompose_project(project: Project, db: Session) -> list[dict[str, Any]]:
     """调用 LLM 把项目拆解为阶段化任务。"""
     llm = get_llm_service()
     payload = await llm.acomplete_json(
@@ -371,6 +385,7 @@ async def decompose_project(project: Project) -> list[dict[str, Any]]:
             domain=project.domain,
             difficulty=project.difficulty,
         ),
+    db=db,
     )
 
     stages = payload.get("stages", []) if isinstance(payload, dict) else []
@@ -469,7 +484,7 @@ async def start_project(
     if candidate.source == ProjectSource.GITHUB and candidate.repo_full_name:
         project.readme_digest = await fetch_readme_digest(candidate.repo_full_name)
 
-    stages = await decompose_project(project)
+    stages = await decompose_project(project, db)
     persist_decomposition(db, project, stages)
     db.commit()
     db.refresh(project)

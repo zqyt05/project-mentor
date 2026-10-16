@@ -17,10 +17,12 @@ from app.models.chat import Conversation, Message
 from app.models.project import Project
 from app.models.review import Review
 from app.models.task import Stage, Task
+from app.models.usage import DailyUsage
 
 __all__ = [
     "DIFFICULTY_LEVELS",
     "Conversation",
+    "DailyUsage",
     "ConversationScope",
     "Message",
     "MessageRole",

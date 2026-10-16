@@ -59,6 +59,12 @@ class Settings(BaseSettings):
     DEMO_PASSWORD: str = ""
     # 是否由后端托管前端构建产物（生产同源部署用，免 CORS）
     SERVE_FRONTEND: bool = False
+    # 每日 AI 调用上限（保护分享者的钱包）。
+    # 0 = 不限制（本地单用户模式的默认值）。
+    # 按「实际 LLM 调用次数」统计：一次项目匹配约 2-3 次，
+    # 一次任务拆解 1 次，一次答疑 1 次，一次复盘 1-2 次。
+    # 分享给朋友试用时建议设为 50-100。
+    DAILY_LLM_CALL_LIMIT: int = 0
 
     # ===== CORS =====
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"

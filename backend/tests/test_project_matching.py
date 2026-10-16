@@ -12,6 +12,7 @@
 import asyncio
 
 import pytest
+from sqlalchemy.orm import Session
 
 from app.models import ProjectSource
 from app.schemas.project import ProjectCandidate
@@ -36,7 +37,7 @@ def patch_collaborators(
 ) -> None:
     """把领域判断 / GitHub 检索 / 定制生成替换为可控的假实现。"""
 
-    async def fake_classify(_domain: str) -> dict:
+    async def fake_classify(_domain: str, _db=None) -> dict:
         return {
             "category": "technical",
             "reason": "属于编程技术方向",
@@ -48,7 +49,7 @@ def patch_collaborators(
     async def fake_github(*_args, **_kwargs) -> list[ProjectCandidate]:
         return list(github_candidates)
 
-    async def fake_custom(_domain: str, _difficulty: str, count: int = 3):
+    async def fake_custom(_domain: str, _difficulty: str, count: int = 3, db=None):
         recorded["count"] = count
         recorded["called"] = True
         return [make_candidate(f"定制项目{i + 1}", ProjectSource.CUSTOM) for i in range(count)]
@@ -62,7 +63,7 @@ class TestGithubShortageTopUp:
     """GitHub 优质项目不足 3 个时，用定制项目补齐而不是整体降级。"""
 
     def test_enough_github_projects_skips_custom(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, db: Session
     ) -> None:
         recorded: dict = {}
         patch_collaborators(
@@ -71,7 +72,7 @@ class TestGithubShortageTopUp:
             recorded,
         )
 
-        result = asyncio.run(ps.match_projects("React 前端入门", "入门"))
+        result = asyncio.run(ps.match_projects("React 前端入门", "入门", db))
 
         assert result.path == ProjectSource.GITHUB
         assert len(result.projects) == 4
@@ -79,7 +80,7 @@ class TestGithubShortageTopUp:
         assert "called" not in recorded, "项目数足够时不应调用定制生成"
 
     def test_two_github_projects_are_topped_up_with_one_custom(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, db: Session
     ) -> None:
         """核心用例：只有 2 个开源项目时，保留它们并补 1 个定制项目。"""
         recorded: dict = {}
@@ -89,7 +90,7 @@ class TestGithubShortageTopUp:
             recorded,
         )
 
-        result = asyncio.run(ps.match_projects("React 前端入门", "入门"))
+        result = asyncio.run(ps.match_projects("React 前端入门", "入门", db))
 
         assert len(result.projects) == 3, "总数应补齐到 3 个"
         github_count = sum(1 for p in result.projects if p.source == ProjectSource.GITHUB)
@@ -102,26 +103,26 @@ class TestGithubShortageTopUp:
         assert "补齐" in result.route_reason
 
     def test_one_github_project_is_topped_up_with_two_custom(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, db: Session
     ) -> None:
         recorded: dict = {}
         patch_collaborators(
             monkeypatch, [make_candidate("gh1", ProjectSource.GITHUB)], recorded
         )
 
-        result = asyncio.run(ps.match_projects("React 前端入门", "入门"))
+        result = asyncio.run(ps.match_projects("React 前端入门", "入门", db))
 
         assert len(result.projects) == 3
         assert recorded["count"] == 2
         assert result.projects[0].source == ProjectSource.GITHUB
 
     def test_no_github_project_falls_back_entirely_to_custom(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, monkeypatch: pytest.MonkeyPatch, db: Session
     ) -> None:
         recorded: dict = {}
         patch_collaborators(monkeypatch, [], recorded)
 
-        result = asyncio.run(ps.match_projects("React 前端入门", "入门"))
+        result = asyncio.run(ps.match_projects("React 前端入门", "入门", db))
 
         assert result.path == ProjectSource.CUSTOM
         assert len(result.projects) == 3
@@ -133,7 +134,7 @@ class TestGithubSearchThreshold:
     """检索结果不再因为「少于 3 个」被直接丢弃。"""
 
     def test_match_github_projects_returns_partial_results(
-        self, monkeypatch: pytest.MonkeyPatch
+        self, db: Session, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """只找到 2 个时应返回这 2 个，而不是空列表。"""
         from app.services.github_service import GithubRepo
@@ -171,7 +172,7 @@ class TestGithubSearchThreshold:
         monkeypatch.setattr(ps, "get_llm_service", lambda: FakeLlm())
 
         candidates = asyncio.run(
-            ps.match_github_projects("React 前端入门", "入门", "react", "JavaScript")
+            ps.match_github_projects("React 前端入门", "入门", "react", "JavaScript", db)
         )
 
         assert len(candidates) == 2

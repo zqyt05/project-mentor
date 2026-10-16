@@ -27,7 +27,9 @@ async def match_projects(payload: ProjectMatchRequest) -> dict:
     - 技术类方向 → GitHub 开源项目检索（路径 A）
     - 通用类方向 / 检索不足 → AI 定制实战项目（路径 B）
     """
-    result = await project_service.match_projects(payload.domain, payload.difficulty)
+    result = await project_service.match_projects(
+        payload.domain, payload.difficulty, db
+    )
     return success(result.model_dump(), message="项目匹配完成")
 
 

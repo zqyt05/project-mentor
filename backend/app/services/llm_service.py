@@ -179,14 +179,22 @@ class LLMService:
         system_prompt: str,
         user_prompt: str,
         *,
+        db: Session,
         temperature: float | None = None,
         max_tokens: int | None = None,
         json_mode: bool = False,
     ) -> str:
         """异步调用 DeepSeek，返回纯文本结果。
 
+        这是所有 AI 调用的唯一出口（`acomplete_json` 也走它），
+        因此在函数入口做每日配额检查，一处即可覆盖全部路径。
+
+        :param db: 数据库会话。**刻意设为必填** —— 配额是费用保护的关键，
+            若允许省略就等于给了一条绕过限制的路径。同时也让依赖显式可见。
         :param json_mode: 为 True 时启用 DeepSeek 的 JSON 输出模式
         """
+        usage_service.consume_or_raise(db)
+
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
@@ -222,6 +230,7 @@ class LLMService:
         system_prompt: str,
         user_prompt: str,
         *,
+        db: Session,
         max_tokens: int | None = None,
         retries: int = 1,
     ) -> Any:
@@ -232,6 +241,7 @@ class LLMService:
                 raw = await self.acomplete(
                     system_prompt,
                     user_prompt,
+                    db=db,
                     max_tokens=max_tokens,
                     json_mode=True,
                 )

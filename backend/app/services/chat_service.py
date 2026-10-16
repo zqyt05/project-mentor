@@ -230,7 +230,7 @@ async def ask(
     )
 
     llm = get_llm_service()
-    answer = await llm.acomplete(system_prompt, user_prompt)
+    answer = await llm.acomplete(system_prompt, user_prompt, db=db)
 
     assistant_message = Message(
         conversation_id=conversation.id, role=MessageRole.ASSISTANT, content=answer

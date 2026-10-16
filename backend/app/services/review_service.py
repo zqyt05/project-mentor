@@ -104,6 +104,7 @@ async def generate_review(
             user_content=user_content,
         ),
         max_tokens=16384,  # 最终文档较长，单独放大 token 预算
+    db=db,
     )
 
     if not isinstance(payload, dict):

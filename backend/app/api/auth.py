@@ -11,8 +11,11 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie, Depends, Response
 from pydantic import BaseModel, Field
 
-from app.services import auth_service
+from app.database import get_db
+from app.services import auth_service, usage_service
 from app.utils.response import BusinessError, success
+from sqlalchemy.orm import Session
+from fastapi import Depends
 
 router = APIRouter(prefix="/api/auth", tags=["演示门禁"])
 
@@ -70,3 +73,16 @@ def logout(response: Response) -> dict:
     """清除访客 Cookie。注意：清除后将失去对自己项目的访问（详见 README）。"""
     auth_service.clear_visitor(response)
     return success({"authenticated": False}, message="已退出")
+
+
+@router.get("/usage", summary="查询今日 AI 调用用量")
+def usage(
+    db: Session = Depends(get_db),
+    _visitor: str | None = Depends(auth_service.current_visitor),
+) -> dict:
+    """查看今日已用次数与上限。
+
+    门禁开启时需先登录（与其余接口一致）；门禁关闭时可直接访问，
+    方便本地开发时确认配额开关是否符合预期。
+    """
+    return success(usage_service.snapshot(db))
