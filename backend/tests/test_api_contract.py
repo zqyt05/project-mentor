@@ -7,6 +7,9 @@
 """
 
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from app.models import Project
 
 REQUIRED_KEYS = {"code", "message", "data"}
 
@@ -100,8 +103,25 @@ class TestStaticEndpoints:
         body = client.get("/api/review/guide").json()
         assert len(body["data"]["questions"]) == 4
 
-    def test_review_latest_returns_null_when_absent(self, client: TestClient) -> None:
-        """未复盘时返回 data=null，前端据此展示引导区。"""
-        body = client.get("/api/review/1").json()
+    def test_review_latest_returns_null_when_absent(
+        self, client: TestClient, db: Session
+    ) -> None:
+        """项目存在但未复盘时返回 data=null，前端据此展示引导区。"""
+        project = Project(name="测试项目", domain="测试方向", difficulty="入门")
+        db.add(project)
+        db.commit()
+
+        body = client.get(f"/api/review/{project.id}").json()
         assert body["code"] == 0
         assert body["data"] is None
+
+    def test_review_latest_on_missing_project(self, client: TestClient) -> None:
+        """项目不存在时应当报 404。
+
+        这与其余项目级接口保持一致 —— 早期实现直接查复盘表，
+        对任意不存在的 id 都返回 null，是唯一一个不做项目校验的接口。
+        加入演示隔离后必须统一，否则归属校验在这一路径上形同虚设。
+        """
+        body = client.get("/api/review/999999").json()
+        assert body["code"] == 404
+        assert "不存在" in body["message"]
