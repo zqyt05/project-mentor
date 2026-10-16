@@ -339,6 +339,30 @@ pnpm build          # 生产构建
 
 ---
 
+## 分享给他人试用
+
+本项目默认是「单用户本地工具」。若要通过公网分享给朋友小范围试用，
+请先阅读 **[演示部署指南](docs/演示部署指南.md)**。
+
+一句话版本：
+
+```bash
+cd frontend && pnpm build                       # 1. 构建前端
+# 2. 在 backend/.env 设置 DEMO_PASSWORD=你的口令
+DEMO_PASSWORD='你的口令' ./scripts/serve-demo.sh  # 3. 生产模式启动（同源托管）
+./scripts/share-tunnel.sh                        # 4. 另开终端建立公网隧道
+```
+
+三点必须知道的事：
+
+1. **你的电脑就是服务器** —— 关机/休眠/关闭隧道终端都会让链接失效
+2. **必须先在 DeepSeek 控制台设置消费上限** —— 你的 Key 为所有访客付费
+3. **不要用 Vercel/Netlify/Render 免费层** —— `POST /api/project/start` 实测约 51 秒，
+   会撞上这些平台的函数超时；Cloudflare 隧道（100s）才能跑通
+
+演示模式下的访客隔离：每人输入口令后获得独立身份，项目数据互相不可见，
+越权访问返回 404 而非 403 以避免泄露项目存在性。
+
 ## 项目结构
 
 ```

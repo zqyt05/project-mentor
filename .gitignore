@@ -12,6 +12,11 @@ venv/
 env/
 *.db
 *.sqlite3
+# SQLite WAL 模式的附属文件 —— 它们**包含真实数据**，
+# 而 `*.db` 通配不会匹配 `xxx.db-wal`，必须单独列出
+*.db-wal
+*.db-shm
+*.db-journal
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
