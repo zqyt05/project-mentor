@@ -11,6 +11,17 @@ import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from '
 import { message } from 'antd'
 import type { ApiResponse } from './types'
 
+/**
+ * 演示门禁失效时的回调。
+ *
+ * 由 useAuthStore 在启动时注册 —— 这样 axios 层不必依赖 store，
+ * 避免「store 引 api、api 引 store」的循环依赖。
+ */
+let onUnauthorized: (() => void) | null = null
+export const setUnauthorizedHandler = (handler: () => void) => {
+  onUnauthorized = handler
+}
+
 /** AI 相关接口的响应可能长达数分钟（推理模型 + 长文生成） */
 const AI_TIMEOUT = 5 * 60 * 1000
 /** 普通数据接口超时 */
@@ -44,6 +55,11 @@ export async function request<T>(config: AxiosRequestConfig, aiCall = false): Pr
       ...config,
     })
     const body = response.data
+    // 门禁失效也走业务 code 通道（HTTP 已返回 401，这里做双保险）
+    if (body.code === 401) {
+      onUnauthorized?.()
+      throw new Error(body.message || '需要重新验证')
+    }
     // 后端业务错误仍以 HTTP 200 返回，通过 code 判断
     if (body.code !== 0) {
       notifyError(body.message || '请求失败')
@@ -52,6 +68,11 @@ export async function request<T>(config: AxiosRequestConfig, aiCall = false): Pr
     return body.data
   } catch (error) {
     const axiosError = error as AxiosError<ApiResponse<unknown>>
+    // 401：演示门禁失效（Cookie 过期或口令已更换）→ 提示重新验证
+    if (axiosError.response?.status === 401) {
+      onUnauthorized?.()
+      throw error
+    }
     // 业务错误已在上面提示过，这里只处理网络层错误
     if (axiosError.response) {
       const payload = axiosError.response.data
