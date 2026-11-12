@@ -1,12 +1,12 @@
 # ProjectMentor — PBL 项目制 AI 实战导师
 
-> **「按照需求去学习，而不是系统性学习。」**
+**输入一个学习方向，得到一个能真正做完的实战项目 —— 不是课程大纲，而是带 DDL 的任务、随时在线的导师，和一次真正检验理解程度的复盘。**
 
-面向全领域学习者的通用 AI 实战学习工具，复刻企业导师带教逻辑，以「做项目」为核心学习方式，
-提供 **项目匹配 → 任务拆解 + DDL → 双窗口隔离答疑 → 费曼复盘输出** 的完整学习闭环。
-
-- **技术编程类方向** → 优先检索 GitHub 优质开源项目做实战
-- **通用知识领域**（金融、运营、职场、学科等）→ AI 生成定制化实战项目
+[![CI](https://github.com/zqyt05/project-mentor/actions/workflows/ci.yml/badge.svg)](https://github.com/zqyt05/project-mentor/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.143-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/License-MIT-0052FF.svg)](LICENSE)
 
 ---
 
@@ -14,30 +14,37 @@
 
 - [解决什么问题](#解决什么问题)
 - [核心功能](#核心功能)
-- [界面截图](#界面截图)
-- [设计风格：新闻纸](#设计风格新闻纸)
+- [界面预览](#界面预览)
+- [设计风格](#设计风格电光蓝--双字体)
 - [技术栈](#技术栈)
 - [快速启动](#快速启动)
-- [开发与测试](#开发与测试)
+- [分享给他人试用](#分享给他人试用)
 - [项目结构](#项目结构)
-- [架构说明](#架构说明)
-- [API 一览](#api-一览)
-- [常见问题](#常见问题)
-
-> 📖 详细文档：[快速启动指南](docs/快速启动指南.md) · [架构说明](docs/架构说明.md) · [开发版 PRD](docs/开发版PRD.md)
+- [开发与测试](#开发与测试)
+- [几个关键的工程决策](#几个关键的工程决策)
+- [已知限制](#已知限制)
+- [License](#license)
 
 ---
 
 ## 解决什么问题
 
-| 学习痛点 | ProjectMentor 的做法 |
+在校学生和转行者学技术时，普遍卡在同一个地方：**看完了教程，但做不出东西**。
+
+- 课程给的是**知识地图**（先学 A，再学 B），不是**交付物**（做出一件东西）
+- 学完不知道自己会不会，因为没有检验环节
+- 遇到问题没人可问，或者只能问通用 AI，得不到结合当前任务的回答
+
+ProjectMentor 想复刻的是**企业里导师带新人的方式**：直接给一个真实项目做，
+做的过程中答疑，做完讲一遍给导师听，导师指出你的理解偏差。
+
+产品上有三个刻意的设计：
+
+| 设计 | 理由 |
 | --- | --- |
-| 想学新技术，但不知道练什么项目 | 输入学习方向，自动匹配 GitHub 开源项目或生成定制实战项目 |
-| 盲目自学，学完只会概念 | 每个项目都有明确交付物，交付标准可判断 |
-| 缺少导师督促、缺少 DDL 约束 | 拆解为 4-6 个阶段任务，每个任务带知识点、交付标准与 DDL |
-| 答疑工具答得泛泛，脱离场景 | 答疑窗口自动绑定当前任务的项目背景、技术栈与交付标准 |
-| 单窗口对话混乱，任务记录被冲刷 | 主任务窗口与答疑窗口物理隔离，任务链路永不被聊天冲掉 |
-| 学完不会复盘，无法形成闭环 | 费曼学习法复盘：用自己的话讲一遍，AI 纠错补全并生成文档 |
+| **只输出项目，不输出课程大纲** | 项目自带完成标准，做完就是学会 |
+| **每个任务带 DDL 与交付标准** | 没有截止日的学习计划等于没有计划 |
+| **用费曼学习法收尾** | 能讲清楚才是真学会，讲不清楚说明没懂 |
 
 ---
 
@@ -45,137 +52,93 @@
 
 ### 1. 双路径项目智能匹配
 
-输入学习方向 + 难度，系统自动判断领域类型并选择最优路径：
+输入学习方向 + 难度，系统先判断领域类型，再走两条路径之一：
 
-```
-用户输入学习方向 + 难度
-    ↓
-AI 判断领域类型（技术开发类 / 通用知识类）
-    ├─ 技术类 → GitHub 检索（Star > 500、近一年有更新、README 完整）
-    │             → AI 逐条评估适配度 → 按难度匹配度排序输出 Top 5
-    └─ 通用类 / 技术类但优质项目 < 3 个
-                  → AI 生成 3 个定制实战项目
-    ↓
-项目卡片列表（名称 / 来源 / 难度 / 推荐理由 / 核心学习点 / 交付物）
-```
+| 路径 | 触发条件 | 做法 |
+| --- | --- | --- |
+| **A · GitHub 开源项目** | 技术开发类方向 | 检索优质仓库 → 逐条评估对学习者的适配度 → 提取 README 摘要 |
+| **B · AI 定制项目** | 通用能力类方向 | 按方向与难度生成「小而实」的实战项目 |
 
-- **路径 A（GitHub）**：调用 GitHub REST API v3 检索，由 DeepSeek 生成推荐理由、适配人群、
-  核心技术点、练习侧重点、常见学习误区，并按难度匹配度打分排序
-- **路径 B（AI 定制）**：生成「小而实、有明确交付物」的项目，例如
-  「编制小型便利店月度资产负债表并做简要分析」
-- **自动降级**：技术类方向如果检索不到 3 个优质项目，自动降级到路径 B
+**关键技术点**：中文方向（如「React 前端入门」）直接拿去搜 GitHub 命中率极低。
+所以领域判断这一步会**同时产出英文技术关键词和语言限定** —— 一次调用解决三件事。
+
+优质开源项目不足 3 个时**不整体降级**，而是用 AI 定制项目补齐差额 ——
+即使只找到 1–2 个高度相关的仓库，也仍然呈现给用户。
 
 ### 2. 项目拆解 + DDL 任务管理
 
-把项目拆解为 **4-6 个学习阶段**，每个阶段 **3-5 个具体任务**，每个任务包含：
-任务名称、任务描述、需掌握知识点、交付标准、建议 DDL 天数。
+选中项目后，AI 把项目拆成 **4–6 个阶段**、共 13–14 个任务，每个任务包含：
 
-- DDL 按任务顺序自动累加计算（项目开始日 + 累计建议天数）
-- 支持**手动调整任意任务的 DDL 日期**
-- **推荐顺序、但不强制**：默认按顺序推进，但任意任务都能直接开始 ——
-  学习者可以根据自己的实际情况跳着做（例如已掌握某部分，想先从后面的任务入手）
-- 进度总览：整体进度条 + 阶段进度 + 逾期提醒
+- 具体做什么（可执行的描述）
+- 需掌握的知识点
+- **可判断真假的交付标准**（不是「理解 XX」，而是「四列齐全无空行，差额为 0」）
+- 建议天数与截止日期（DDL 按顺序累加）
+
+任务**推荐按顺序推进，但不强制** —— 任意任务都能直接开始。
+自主学习者可能已经掌握某部分、或想先看后面的任务再回头补，硬性门禁会把人卡住。
 
 ### 3. 双窗口隔离式场景化答疑
 
-固定左右分栏，**左侧主任务窗口默认约 70%，右侧独立答疑窗口约 30%**：
+左侧主任务窗口 + 右侧独立答疑窗口，**分栏比例可拖拽调整**（默认 70/30，双击复位）。
 
-> 分栏比例可拖拽调整（拖动中间把手，双击恢复默认 70%）并记住你的选择；
-> 窄屏下自动改为上下堆叠。
+关键设计：**每个任务的对话完全隔离**。
+右上角的答疑上下文自动绑定当前任务，切换任务时加载该任务独立的对话历史，
+且**永远不会冲掉**左侧的任务记录。
 
-| | 左侧主任务窗口 | 右侧答疑窗口 |
-| --- | --- | --- |
-| 职责 | 纯展示与任务操作 | 仅提问与解答 |
-| 内容 | 项目总览 / 任务列表 / 复盘 | 对话气泡流 |
-| 更新时机 | 仅任务状态切换、页面切换 | 每次问答 |
-| 滚动 | 独立滚动 | 独立滚动 |
-
-- **上下文联动**：点击左侧任务 → 右侧自动加载该任务的项目背景 + 任务信息 + 历史对话
-- **会话隔离**：每个任务独立保存对话历史，切换任务时上下文互不干扰
-- **物理隔离**：答疑的提问 / 刷新 / 清空**不会修改任何项目或任务数据**
-- 支持清空当前任务对话、快速提问模板、Markdown + 代码高亮渲染
+历史对话按最近 12 条截断 —— 再多的上下文收益有限，反而会稀释当前任务的焦点。
 
 ### 4. 费曼学习法复盘
 
-全部任务完成后进入复盘环节：
+全部任务完成后进入复盘环节，用「结构化技术总结 / 项目复盘博客 / 面试口述提纲」
+三种形式之一，让学习者**用自己的话讲一遍**，AI 从四个维度处理：
 
-1. 选择复盘形式（**结构化技术总结文档 / 项目复盘博客 / 面试口述提纲**）
-2. 依据 4 个引导问题，用自己的话输出项目理解
-3. AI 从四个维度处理：**纠正理解错误 → 补充遗漏知识点 → 优化逻辑结构 → 给出深化建议**
-4. 生成结构完整的 Markdown 复盘文档，支持**一键复制**
-5. 右侧答疑窗口可继续就复盘内容提问
-
-### 5. 全局导航与数据持久化
-
-- 顶部导航栏：产品标识、当前项目与来源标签、整体进度条、全局入口
-- 所有项目、任务、对话、复盘数据持久化到本地 **SQLite**
-- 历史学习项目列表：进度、状态、来源，支持继续学习与删除
-
----
-
-## 界面截图
-
-整体采用「新闻纸」设计风格：零圆角、墨黑为唯一强调色、以边框而非阴影划分结构。
-详见 [设计风格](#设计风格新闻纸)。
-
-### 首页：输入学习方向（STEP 1–4 竖排说明）
-
-![首页](docs/screenshots/01-首页-学习方向输入.png)
-
-### 项目匹配结果：路径 A（GitHub 开源项目）
-
-按适配度排序，卡片只保留决策所需信息，次要内容折叠。
-
-![项目匹配结果](docs/screenshots/02-项目匹配结果.png)
-
-### 项目总览（含阶段化任务时间线）
-
-![项目总览](docs/screenshots/03-项目总览.png)
-
-### README 摘要：默认折叠，展开后首行回链仓库原文
-
-![README 展开](docs/screenshots/04-README摘要展开.png)
-
-### 任务列表（含交付标准与 DDL）
-
-![任务列表](docs/screenshots/05-任务列表.png)
-
-### 费曼复盘：左侧输出，右侧 AI 批改与最终文档
-
-![费曼复盘](docs/screenshots/06-费曼复盘.png)
-
-### 历史学习项目
-
-![历史项目](docs/screenshots/07-历史项目.png)
-
----
-
-## 设计风格：新闻纸
-
-> 「所有适合刊登的新闻。」—— 对印刷新闻黄金时代的致敬。
-
-拒绝现代网页的柔和阴影、模糊背景与圆角，拥抱纯粹的几何、高信息密度与可见的结构。
-
-### 核心规则
-
-| 维度 | 规则 |
+| 维度 | 做什么 |
 | --- | --- |
-| 圆角 | **处处为 0px**，无例外（唯一例外是加载指示器，方角会显得像故障） |
-| 配色 | 米白 `#F9F9F7` + 墨黑 `#111111`；编辑红 `#CC0000` 极其克制地使用 |
-| 边框 | 1px 墨黑为标准，4px 用于主要区域分隔；相邻元素**共享边框**避免双线 |
-| 阴影 | 扁平。仅交互卡片在悬停时出现硬偏移阴影 `4px 4px 0 0 #111` |
-| 字体 | 标题 Playfair Display · 正文 Lora · UI Inter · 数据 JetBrains Mono |
-| 标签 | 全大写 + `letter-spacing: 0.2em` + 等宽 |
-| 纹理 | body 铺 4×4px 点阵；主要区域叠加 3×3px 细网格 |
+| 理解纠错 | 找出说错的地方，给出正确表述 |
+| 遗漏补全 | 补充没提到但重要的知识点 |
+| 结构优化 | 把零散的表述整理成有逻辑的文档 |
+| 深化建议 | 指出可以继续深挖的方向 |
 
-### 实现位置
+输出一份**可展示的复盘文档**，支持一键复制。
 
-- 颜色、字体、边框、纹理、组件覆写 → [`frontend/src/index.css`](frontend/src/index.css)
-- Ant Design 主题 token（零圆角、墨黑主色）→ [`frontend/src/App.tsx`](frontend/src/App.tsx)
+### 5. 历史项目与进度管理
 
-> 说明：设计规范原文以 Tailwind 工具类描述，本项目使用 **Ant Design 5 + 原生 CSS**（PRD 强制），
-> 因此规范中的类名被转译为「CSS 变量 + 工具类 + AntD theme token」三层实现，
-> 而非引入 Tailwind —— 避免与 AntD 的样式重置产生冲突。
+所有项目持久化在本地，支持查看进度、继续学习、删除。
+顶栏实时显示当前项目的完成度。
+
+---
+
+## 界面预览
+
+> 截图位于 [`docs/screenshots/`](docs/screenshots/)
+
+| 首页：极简搜索 | 项目总览 |
+| --- | --- |
+| ![首页](docs/screenshots/01-首页-学习方向输入.png) | ![总览](docs/screenshots/03-项目总览.png) |
+
+| 任务列表（含交付标准与 DDL） | 费曼复盘 |
+| --- | --- |
+| ![任务列表](docs/screenshots/05-任务列表.png) | ![复盘](docs/screenshots/06-费曼复盘.png) |
+
+---
+
+## 设计风格：电光蓝 + 双字体
+
+界面刻意避开「白底灰字安全牌」，用一套有识别度的现代设计系统：
+
+| 要素 | 做法 |
+| --- | --- |
+| **标志性渐变** | `#0052FF → #4D7CFF`，出现在主按钮、标题强调词、进度条、菜单选中态、列表项目符号 |
+| **反色对比区块** | 项目总览的统计条用深石板底 + 3% 点阵纹理，滚动时形成视觉节奏 |
+| **双字体排版** | Calistoga（展示）+ Inter（UI/正文）+ JetBrains Mono（标签/数据） |
+| **动画深度** | 装饰环 72s 旋转、浮动几何体 4–5s、脉冲指示器 2s、按钮悬停上浮 |
+| **纹理** | 径向辉光（blur 150px）、Hero 径向渐变叠加、分层柔和阴影 |
+
+**无障碍**：焦点环匹配强调色；反色区块对比度达标；全部动画尊重
+`prefers-reduced-motion`；触摸目标 ≥ 44px。
+
+**中文排版细节**：Calistoga 没有 CJK 字形，中文标题回退到 `Noto Serif SC`，
+保证中英混排的调性一致 —— 否则中文会掉到系统默认字体，双字体的身份感就丢了。
 
 ---
 
@@ -183,420 +146,230 @@ AI 判断领域类型（技术开发类 / 通用知识类）
 
 | 层级 | 技术选型 | 说明 |
 | --- | --- | --- |
-| 前端 | React 18 + TypeScript + Vite 5 | 主流前端栈，TS 保证类型安全 |
-| 前端 UI | Ant Design 5 | Layout 布局天然支持双窗口分栏 |
-| 前端渲染 | react-markdown + highlight.js | 渲染任务描述、答疑内容、复盘文档与代码高亮 |
-| 前端状态 | Zustand | 轻量全局状态，承载双窗口联动纽带 |
-| 后端 | Python 3.11 + FastAPI | 异步性能好，自动生成接口文档 |
-| AI 编排 | LangChain (langchain-openai) | Prompt 模板、对话链管理，对接 DeepSeek |
-| 数据库 | SQLite + SQLAlchemy 2.0 | 轻量免部署，单用户本地使用 |
-| AI 模型 | DeepSeek API（`deepseek-flash`） | 推理模型，理解与生成能力强、成本低 |
-| 第三方集成 | GitHub REST API v3 | 技术类项目检索数据源 |
-| 环境管理 | python-dotenv + pydantic-settings | 敏感信息全部走环境变量，禁止硬编码 |
+| 前端 | React 18 + TypeScript 5.7 + Vite 5 | 主流前端栈，TS 严格模式 |
+| 前端 UI | Ant Design 5 | Layout 天然支持双窗口分栏 |
+| 前端状态 | Zustand 5 | 轻量全局状态，承载双窗口联动 |
+| 前端路由 | react-router-dom 6 | 首页独立全屏，其余页面走双窗口外壳 |
+| 内容渲染 | react-markdown + remark-gfm + highlight.js | 渲染答疑与复盘文档，支持表格与代码高亮 |
+| 后端 | Python 3.11 + FastAPI 0.143 | 全异步链路，自动生成 OpenAPI 文档 |
+| ORM | SQLAlchemy 2.1（2.0 声明式风格） | SQLite，WAL 模式 |
+| AI 编排 | LangChain 1.4 + langchain-openai 1.7 | 对接 DeepSeek 的 OpenAI 兼容接口 |
+| AI 模型 | DeepSeek `deepseek-flash` | 推理模型，1M 上下文 |
+| 第三方集成 | GitHub REST API v3 | 技术类项目检索与 README 校验 |
+| 静态检查 | flake8（F 类语义检查）+ ESLint 8 + tsc | 见 [CI 配置](.github/workflows/ci.yml) |
+| 容器化 | Docker 多阶段构建 + Compose | 前后端同源，镜像 451 MB |
+| 环境管理 | pydantic-settings | 敏感信息全部走环境变量，禁止硬编码 |
 
 ---
 
 ## 快速启动
 
-### 最省事的方式（推荐）
-
-仓库内置启动脚本，自动处理虚拟环境、Node 探测、依赖安装与端口检查：
+### 方式一：本地开发（改代码时用）
 
 ```bash
-# 终端 1：启动后端
+# 准备配置
+cp backend/.env.example backend/.env
+# 编辑 backend/.env，填入 DEEPSEEK_API_KEY（必填）与 GITHUB_TOKEN（可选）
+
+# 终端 1：后端（首次运行自动建表）
 ./scripts/start-backend.sh
 
-# 终端 2：启动前端
+# 终端 2：前端
 ./scripts/start-frontend.sh
 ```
 
-浏览器打开 <http://127.0.0.1:5173> 即可。详见 [快速启动指南](docs/快速启动指南.md)。
+打开 <http://127.0.0.1:5173>
 
-> **前置条件**：只需要一个 DeepSeek API Key（填入 `backend/.env`）。
-> Node.js 若未安装，脚本会回退到系统已有版本或提示 `brew install node`；
-> `pnpm` 无需全局安装。
+依赖环境：Python 3.11、Node ≥ 22.13、pnpm。
 
-### 手动启动
-
-#### 环境要求
-
-- Python **3.11**（PRD 强制要求；3.11.x 已验证）
-- Node.js **22.13+**（前端构建；`pnpm` 无需全局安装）
-  > 为什么需要 22.13：pnpm 11 内部使用了 Node 的 `node:sqlite` 内置模块，
-  > 在更早的 Node 上会以 `ERR_UNKNOWN_BUILTIN_MODULE` 崩溃。
-- 一个 DeepSeek API Key（[申请地址](https://platform.deepseek.com/api_keys)）
-- 可选：GitHub Personal Access Token（不配置也能用，但搜索速率限制更低）
-
-#### 1. 配置环境变量
+### 方式二：Docker（一键起，推荐给别人演示）
 
 ```bash
-# 在项目根目录执行
-cp .env.example backend/.env
+docker compose up -d --build     # 构建并后台启动
+docker compose logs -f           # 看日志
+docker compose down              # 停止（保留数据卷）
 ```
 
-编辑 `backend/.env`，至少填写：
+打开 <http://127.0.0.1:8000>
 
-```dotenv
-DEEPSEEK_API_KEY=sk-你的真实密钥
-GITHUB_TOKEN=github_pat_你的令牌   # 可选但建议
-```
+容器特性：
 
-> ⚠️ `backend/.env` 已在 `.gitignore` 中，不会被提交。请勿把真实密钥写入 `.env.example`。
+- 前后端**同源**（后端托管前端产物），零 CORS 配置
+- SQLite 落在命名卷 `projectmentor-data`，容器重建不丢数据
+- **非 root 运行**（uid 10001）
+- 镜像内**不含 `.env` 与数据库**（密钥通过环境变量注入，避免烘进镜像层）
+- 内置健康检查
 
-#### 2. 启动后端
-
-```bash
-cd backend
-
-# 创建 Python 3.11 虚拟环境（二选一）
-python3.11 -m venv .venv          # 使用系统 Python
-# 或使用 uv（会自动下载 Python 3.11）
-# uv venv --python 3.11 .venv
-
-# 激活虚拟环境
-source .venv/bin/activate          # macOS / Linux
-# .venv\Scripts\activate           # Windows
-
-# 安装依赖
-pip install -r requirements.txt
-# 或：uv pip install -r requirements.txt
-
-# 启动服务（会自动建表）
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-后端启动后可访问：
-
-- 健康检查：<http://127.0.0.1:8000/api/health>
-- 接口文档（Swagger）：<http://127.0.0.1:8000/docs>
-
-#### 3. 启动前端
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
-浏览器打开 <http://127.0.0.1:5173> 即可使用。
-
-> Vite 已配置 `/api` 代理到 `http://127.0.0.1:8000`，前端无需关心跨域与后端域名。
-
-#### 4. 生产构建（可选）
-
-```bash
-cd frontend
-pnpm build          # 产物输出到 frontend/dist
-pnpm preview        # 本地预览构建产物
-```
+> macOS 若提示 `docker: command not found`，把 CLI 加进 PATH：
+> `echo 'export PATH="$HOME/.docker/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc`
 
 ---
-
-## 开发与测试
-
-### 后端单元测试
-
-测试全部**离线运行**，不调用 DeepSeek 与 GitHub，因此在没有 API Key 的环境（例如 CI）也能通过。
-
-```bash
-cd backend
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-python -m pytest -v
-```
-
-覆盖的是**最容易在重构中静默失效的确定性逻辑**：
-
-| 测试文件 | 盯住什么 |
-| --- | --- |
-| `test_json_extraction.py` | LLM 输出的五重容错解析（代码块、前后废话、尾逗号、裸控制字符、截断） |
-| `test_task_workflow.py` | DDL 累加计算、任务可自由排序（无门禁）、进度统计边界（0 任务 / 部分完成 / 全完成） |
-| `test_api_contract.py` | 所有接口与错误都返回统一的 `{code, message, data}` 结构 |
-
-> AI 相关链路（Prompt 效果、模型输出质量）不适合用单测覆盖，
-> 建议用真实 API 跑一遍端到端流程来验证，而不是写 mock 测试。
-
-### 前端检查
-
-```bash
-cd frontend
-pnpm typecheck      # TypeScript 类型检查
-pnpm lint           # ESLint
-pnpm build          # 生产构建
-```
-
-### 持续集成
-
-`.github/workflows/ci.yml` 会在每次 push 与 PR 时自动执行上面的全部检查
-（后端导入检查 + 单测；前端类型检查 + Lint + 构建）。
-
-### 数据库文件位置
-
-`DATABASE_URL` 默认为**锚定 `backend/` 目录的绝对路径**，因此无论从哪个目录启动后端，
-数据库都落在 `backend/projectmentor.db`，不会出现"数据跑错地方"的问题。
-
-重置数据：停止后端 → 删除该文件 → 重启后端（会自动重建空表）。
-
----
-
-## 项目知识库（RAG）
-
-可以把课程讲义、行业报告、自己的笔记上传到项目里，答疑时先检索这些资料，
-并在回答中标注引用了哪一份。
-
-- 支持 `txt` / `md` / `pdf` / `docx`，单个 ≤ 5 MB
-- 本地向量模型 `BAAI/bge-small-zh-v1.5`（512 维，91 MB），**不产生 API 费用**
-- 模型不可用时自动降级为关键词检索，功能不中断
-- 页面内提供「检索预览」，可直接查看会召回哪些片段（不调用 AI）
-
-详见 **[知识库（RAG）说明](docs/知识库（RAG）说明.md)**。
 
 ## 分享给他人试用
 
-本项目默认是「单用户本地工具」。若要通过公网分享给朋友小范围试用，
-请先阅读 **[演示部署指南](docs/演示部署指南.md)**。
-
-一句话版本：
+详见 **[演示部署指南](docs/演示部署指南.md)**。一句话版本：
 
 ```bash
-cd frontend && pnpm build                       # 1. 构建前端
+cd frontend && pnpm build                           # 1. 构建前端
 # 2. 在 backend/.env 设置 DEMO_PASSWORD=你的口令
-DEMO_PASSWORD='你的口令' ./scripts/serve-demo.sh  # 3. 生产模式启动（同源托管）
-./scripts/share-tunnel.sh                        # 4. 另开终端建立公网隧道
+DEMO_PASSWORD='你的口令' ./scripts/serve-demo.sh      # 3. 生产模式启动
+./scripts/share-tunnel.sh                            # 4. 另开终端建隧道
 ```
 
-三点必须知道的事：
+三件必须知道的事：
 
 1. **你的电脑就是服务器** —— 关机/休眠/关闭隧道终端都会让链接失效
 2. **注意 AI 费用** —— 你的 Key 为所有访客付费。DeepSeek **不提供消费上限**，
-   建议「只充值小额」（余额即硬上限），并设置应用层的每日调用上限：
+   建议「只充值小额」（余额即硬上限），并设置应用层每日上限
    `DAILY_LLM_CALL_LIMIT=80`（0 = 不限制，本地默认）
-3. **不要用 Vercel/Netlify/Render 免费层** —— `POST /api/project/start` 实测约 51 秒，
-   会撞上这些平台的函数超时；Cloudflare 隧道（100s）才能跑通
+3. **不要用 Vercel / Netlify / Render 免费层** —— `POST /api/project/start`
+   实测约 51 秒，会撞上这些平台的函数超时；Cloudflare 隧道（100s）才能跑通
 
-演示模式下的访客隔离：每人输入口令后获得独立身份，项目数据互相不可见，
-越权访问返回 404 而非 403 以避免泄露项目存在性。
+演示模式内置两道防护：
+
+- **口令门禁**：HMAC 签名的 Cookie，访客身份无法伪造
+- **访客数据隔离**：每个访客只能看到自己的项目，越权返回 404 而非 403（不泄露存在性）
+
+---
 
 ## 项目结构
 
 ```
 ProjectMentor/
-├── README.md                          # 项目说明、快速启动、架构介绍
-├── LICENSE                            # MIT 协议
-├── .env.example                       # 环境变量示例（不含真实密钥）
-├── .gitignore
-├── .github/workflows/ci.yml           # CI：后端单测 + 前端类型检查/Lint/构建
-├── scripts/                           # 一键启动脚本
-│   ├── start-backend.sh               # 自动定位虚拟环境并启动 FastAPI
-│   └── start-frontend.sh              # 自动定位 Node/pnpm、装依赖并启动 Vite
-├── backend/                           # 后端服务
+├── backend/
 │   ├── app/
-│   │   ├── main.py                    # FastAPI 入口（路由注册、CORS、异常处理）
-│   │   ├── config.py                  # 配置管理（pydantic-settings 读取 .env）
-│   │   ├── database.py                # 数据库连接与会话管理
-│   │   ├── models/                    # SQLAlchemy 数据模型
-│   │   │   ├── base.py                # 公共基类、时间戳、枚举常量
-│   │   │   ├── project.py             # 统一项目模型（GitHub / 定制共用）
-│   │   │   ├── task.py                # 阶段 Stage + 任务 Task
-│   │   │   ├── chat.py                # 会话 Conversation + 消息 Message
-│   │   │   └── review.py              # 费曼复盘 Review
-│   │   ├── schemas/                   # Pydantic 请求 / 响应模型
-│   │   ├── api/                       # 接口路由层（只做参数校验与响应封装）
-│   │   │   ├── project.py             # 项目匹配与生成
-│   │   │   ├── task.py                # 任务与 DDL 管理
-│   │   │   ├── chat.py                # 答疑
-│   │   │   └── review.py              # 复盘
-│   │   ├── services/                  # 业务逻辑层
-│   │   │   ├── llm_service.py         # DeepSeek + LangChain 封装、JSON 容错解析
-│   │   │   ├── github_service.py      # GitHub REST API v3 检索
-│   │   │   ├── project_service.py     # 双路径匹配、项目落库、任务拆解
-│   │   │   ├── chat_service.py        # 会话隔离与上下文拼接
-│   │   │   └── review_service.py      # 费曼复盘处理
-│   │   ├── prompts/                   # Prompt 模板（与代码解耦，便于调优）
-│   │   │   ├── domain_route.txt       # 领域判断与检索关键词生成
-│   │   │   ├── github_recommend.txt   # GitHub 项目推荐评估
-│   │   │   ├── custom_project.txt     # AI 定制项目生成
-│   │   │   ├── task_decompose.txt     # 项目拆解为阶段任务
-│   │   │   ├── chat_answer.txt        # 场景化答疑
-│   │   │   └── feynman_review.txt     # 费曼复盘
-│   │   └── utils/response.py          # 统一响应格式与全局异常处理
-│   ├── tests/                         # 单元测试（全部离线，不依赖 API Key）
-│   │   ├── conftest.py                # 内存 SQLite 夹具
-│   │   ├── test_json_extraction.py    # LLM 输出容错解析
-│   │   ├── test_task_workflow.py      # DDL 累加 / 任务顺序自由 / 进度计算
-│   │   └── test_api_contract.py       # 统一响应格式与异常处理
-│   ├── requirements.txt               # 运行时依赖
-│   ├── requirements-dev.txt           # 开发依赖（pytest）
-│   ├── pytest.ini
-│   └── .env                           # 本地环境变量（已 gitignore）
-├── frontend/                          # 前端项目
-│   ├── src/
-│   │   ├── pages/                     # 页面组件
-│   │   │   ├── HomePage.tsx           # 首页：输入学习方向
-│   │   │   ├── MatchPage.tsx          # 项目匹配结果
-│   │   │   ├── OverviewPage.tsx       # 项目总览
-│   │   │   ├── TasksPage.tsx          # 任务列表
-│   │   │   ├── ReviewPage.tsx         # 费曼复盘
-│   │   │   └── HistoryPage.tsx        # 历史学习项目
-│   │   ├── components/                # 公共组件
-│   │   │   ├── ProjectCard.tsx        # 项目卡片
-│   │   │   ├── TaskCard.tsx           # 任务卡片（开始 / 完成 / 调整 DDL）
-│   │   │   ├── StageTimeline.tsx      # 阶段化任务时间线
-│   │   │   ├── MessageBubble.tsx      # 对话气泡
-│   │   │   └── MarkdownView.tsx       # Markdown 渲染
-│   │   ├── layout/                    # 双窗口布局
-│   │   │   ├── MainLayout.tsx         # 全局框架：TopBar + 双窗口
-│   │   │   ├── TopBar.tsx             # 顶部导航 + 进度条
-│   │   │   ├── SideMenu.tsx           # 左侧分区菜单
-│   │   │   └── ChatPanel.tsx          # 右侧独立答疑窗口
-│   │   ├── api/                       # 接口请求封装（axios + 类型定义）
-│   │   ├── store/                     # 状态管理（Zustand）
-│   │   ├── App.tsx                    # 路由与主题
-│   │   ├── main.tsx
-│   │   └── index.css                  # 全局样式（含双窗口分栏）
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── tsconfig.json
-└── docs/                              # 项目文档与截图
-    ├── 开发版PRD.md
-    ├── ProjectMentorPRD.md
-    └── screenshots/
+│   │   ├── api/            # 路由层：只做参数校验与响应封装
+│   │   │   ├── auth.py         # 演示门禁（口令登录、访客身份）
+│   │   │   ├── project.py      # 项目匹配、详情、删除
+│   │   │   ├── task.py         # 阶段/任务、状态流转、进度
+│   │   │   ├── chat.py         # 答疑（按任务隔离的会话）
+│   │   │   └── review.py       # 费曼复盘
+│   │   ├── services/       # 业务逻辑层：可脱离 FastAPI 单测
+│   │   │   ├── project_service.py    # 匹配 / 拆解 / 进度计算
+│   │   │   ├── chat_service.py       # 上下文拼装与对话
+│   │   │   ├── review_service.py     # 复盘生成
+│   │   │   ├── llm_service.py        # DeepSeek 封装（含配额收口点）
+│   │   │   ├── github_service.py     # GitHub 检索
+│   │   │   ├── auth_service.py       # 口令与签名 Cookie
+│   │   │   └── usage_service.py      # 每日 AI 调用配额
+│   │   ├── models/         # SQLAlchemy 模型（6 张表）
+│   │   ├── schemas/        # Pydantic 请求/响应
+│   │   ├── prompts/        # 6 个 Prompt 模板（当代码资产管理）
+│   │   └── utils/response.py # 统一 {code,message,data} 与全局异常处理
+│   ├── tests/              # 111 个离线单测
+│   └── requirements.txt
+├── frontend/
+│   └── src/
+│       ├── api/            # axios 封装（统一解包、401 拦截、FormData）
+│       ├── components/     # ProjectCard / TaskCard / StageTimeline / Reveal …
+│       ├── layout/         # MainLayout（可拖拽分栏）/ TopBar / SideMenu / ChatPanel
+│       ├── pages/          # Home / Login / Match / Overview / Tasks / Review / History
+│       ├── store/          # Zustand（应用状态 + 鉴权状态）
+│       └── index.css       # 设计系统（CSS 变量 + 工具类 + AntD 覆写）
+├── scripts/                # 启动、演示、隧道、Key 检查
+├── docs/                   # 部署指南、架构说明、截图
+├── Dockerfile / docker-compose.yml
+└── .github/workflows/ci.yml
 ```
 
+**规模**：后端 3534 行 / 33 文件，测试 1276 行，前端 TS 3677 行 / 30 文件，
+CSS 2468 行，**19 个 REST 接口**，6 张表，**111 个单测**。
+
 ---
 
-## 架构说明
+## 开发与测试
 
-### 分层设计
+```bash
+# 后端：静态检查 + 单测
+cd backend
+./.venv/bin/python -m flake8 app/ tests/
+./.venv/bin/python -m pytest
 
+# 前端：类型检查 + Lint + 构建
+cd frontend
+./node_modules/.bin/tsc --noEmit
+./node_modules/.bin/eslint . --ext ts,tsx
+./node_modules/.bin/vite build
 ```
-前端 React SPA
-   │  axios（统一解包 {code, message, data}）
-   ▼
-api/            路由层：参数校验、响应封装，不写业务逻辑
-   ▼
-services/       业务层：领域路由、GitHub 检索、LLM 编排、会话隔离
-   ▼
-models/         ORM 层：统一数据模型，SQLite 持久化
-```
 
-- **API 层与业务层解耦**：路由函数只做参数校验与 `success()` 包装，业务逻辑全部在 `services/`
-- **Prompt 与代码解耦**：所有 Prompt 放在 `prompts/*.txt`，用 `string.Template` 的 `$var` 语法渲染，
-  模板内可以直接写 JSON 示例而不与花括号冲突
-- **统一响应格式**：所有接口返回 `{code, message, data}`，`code == 0` 表示成功；
-  业务异常、参数校验失败、未捕获异常都通过全局异常处理器收敛为同一结构
+**测试原则：全部离线** —— 任何用例都不触发 LLM 或 GitHub 请求，
+因此在没有 API Key 的环境（如 CI）下也能全部通过。
 
-### 双窗口隔离的实现要点
+覆盖范围刻意选在「确定性逻辑」上：DDL 累加、进度边界、JSON 容错解析、
+响应契约、字段清洗规则、路由补齐策略、访客隔离、每日配额。
+**不测试 AI 输出质量** —— 那属于端到端验证，用 mock 去测只会自欺欺人。
 
-「答疑不影响主任务窗口」不是靠前端约束，而是靠**数据层隔离**保证：
-
-1. 答疑只会写入 `conversations` / `messages` 两张表，**从不触碰** `projects` / `tasks`
-2. 会话表有唯一约束 `(project_id, scope, task_id)`，每个任务天然只有一份独立会话
-3. 前端 `ChatPanel` 的状态（消息、loading、输入框）完全独立于主窗口 store
-
-因此即使答疑窗口刷新、清空、并发提问，主窗口的任务状态与进度都不会发生任何变化。
-
-### 统一项目模型
-
-GitHub 开源项目与 AI 定制项目**共用同一张 `projects` 表**，通过 `source` 字段区分，
-GitHub 专有字段（`repo_url` / `stars` / `language`）对定制项目为空。
-这样任务拆解、答疑、复盘三条链路完全复用，无需为两种来源写两套逻辑。
-
-### 关于 `deepseek-flash`
-
-`deepseek-flash` 是**推理模型**：返回结果中除 `content` 外还有 `reasoning_content`（思考过程），
-且思考过程同样消耗 token。实践中需要注意：
-
-- `max_tokens` 必须给足（本项目默认 8192，复盘生成用 16384），
-  否则 token 预算会被思考过程耗尽，导致 `content` 返回空字符串
-- 本项目对结构化输出统一使用 `response_format={"type": "json_object"}`，
-  并叠加本地容错解析（剥离代码块、截取最外层括号、修复尾逗号、转义裸控制字符）
+CI（GitHub Actions）在每次 push/PR 时执行：flake8 静态检查 → 导入检查 → 单测；
+前端 typecheck → lint → build。
 
 ---
 
-## API 一览
+## 几个关键的工程决策
 
-所有接口统一返回 `{code, message, data}`。
+这一节记录「为什么这么做」，比「做了什么」更有参考价值。
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/api/health` | 健康检查（含 LLM / GitHub 配置状态） |
-| POST | `/api/project/match` | 双路径项目智能匹配 |
-| POST | `/api/project/start` | 开始学习（项目落库 + 任务拆解） |
-| GET | `/api/project/list` | 历史学习项目列表 |
-| GET | `/api/project/{id}` | 项目详情（含阶段任务时间线） |
-| DELETE | `/api/project/{id}` | 删除项目及其全部数据 |
-| GET | `/api/task/project/{id}/stages` | 阶段任务时间线 |
-| GET | `/api/task/project/{id}/progress` | 项目整体进度 |
-| GET | `/api/task/{id}` | 任务详情 |
-| PATCH | `/api/task/{id}` | 更新任务（DDL / 状态 / 内容） |
-| POST | `/api/task/{id}/start` | 开始当前任务 |
-| POST | `/api/task/{id}/complete` | 标记完成（返回下一个建议任务） |
-| POST | `/api/task/{id}/reset` | 重置为未开始 |
-| POST | `/api/chat/ask` | 提问（自动绑定项目 + 任务上下文） |
-| GET | `/api/chat/history` | 加载指定任务 / 复盘的对话历史 |
-| DELETE | `/api/chat/history` | 清空当前任务的对话 |
-| GET | `/api/review/guide` | 复盘引导（3 种形式 + 引导问题） |
-| POST | `/api/review/generate` | 提交复盘内容，AI 纠错补全 |
-| GET | `/api/review/{project_id}` | 获取项目最新复盘 |
+### 推理模型的 token 预算
 
-完整的交互式文档见 <http://127.0.0.1:8000/docs>。
+`deepseek-flash` 的 `reasoning_content`（思考过程）与 `content`（正文）
+**共享同一个 token 预算**。给 50 tokens 时正文直接返回空字符串。
+所以默认 8192，复盘生成用 16384。
 
----
+### Prompt 用 `string.Template` 而不是 `str.format`
 
-## 常见问题
+模板里要写 JSON 示例，`str.format` 会把 `{}` 当占位符，必须全部转义，
+可读性极差。`$var` 形式没有这个问题。
 
-**Q：AI 接口很慢 / 一直转圈？**
-`deepseek-flash` 是推理模型，项目匹配约 20-40 秒，复盘文档生成约 30-90 秒。
-前端 AI 接口超时设为 5 分钟。若持续失败，先检查后端日志。
+### JSON 输出五重容错
 
-**Q：答疑回答为空？**
-通常是 token 预算被思考过程耗尽。把 `backend/.env` 里的 `LLM_MAX_TOKENS` 调大后重启服务。
+不信任模型输出，`extract_json()` 依次尝试：直接解析 → 剥离代码块 →
+截取最外层括号 → 修复尾逗号 → 转义裸控制字符。
 
-**Q：GitHub 检索报 403？**
-触发了 GitHub 速率限制。在 `backend/.env` 中配置 `GITHUB_TOKEN` 可显著提升额度。
+### 用数据库约束保证业务不变量
 
-**Q：技术类方向却生成了定制项目？**
-说明 GitHub 上符合「Star > 500、近一年有更新、README 完整」的优质项目不足 3 个，
-系统按设计自动降级到 AI 定制路径——这是预期行为，接口返回的 `route_reason` 会说明原因。
+「双窗口隔离」不是靠前端约束，而是靠
+`UniqueConstraint(project_id, scope, task_id)` —— 数据层保证。
 
-**Q：想清空所有学习数据重新开始？**
-停止后端，删除 `backend/projectmentor.db`，重启后端会自动重建空表。
+### 归属校验收口在一个函数
 
-**Q：前端 `pnpm build` 报 `ERR_DLOPEN_FAILED` / `different Team IDs`？**
-这是 macOS Hardened Runtime 与 rollup 原生模块签名不匹配导致的环境问题，
-已在 `frontend/pnpm-workspace.yaml` 中通过 `overrides` 把 rollup 换成官方 WebAssembly 版本规避，
-正常执行 `pnpm install` 即可。
+所有项目读取都经过 `project_service.get_project`，因此在**这一个函数**里校验
+就能覆盖全部 16 个项目级/任务级接口，而不是逐个补检查然后漏掉一个。
+漏一个就是一个越权缺口，而缺口不会自己暴露。
+
+越权返回 **404 而非 403**：403 等于确认「该 id 存在但你没权限」，会泄露存在性。
+
+### 测试隔离必须系统性
+
+`Settings` 会读取 `backend/.env`，本地配置会漏进测试导致莫名失败。
+一开始只把个别开关置空，新增字段时又漏了。
+最终改为**逐字段重置为默认值**，新增字段自动覆盖。
+
+### 用 flake8 代替手写检查器
+
+「函数体引用了签名里没声明的变量」这类缺陷只在接口被调用时暴露为 500，
+单测不覆盖该路径就发现不了。手写 AST 检查器只能覆盖当时想到的变量名；
+`flake8` 的 `F821 undefined name` 覆盖任意未定义名字。
+（选 flake8 而非 pyflakes，是因为代码里有 `# noqa: F401` 标注刻意的导入副作用。）
+
+### 镜像里不放密钥与数据
+
+`.dockerignore` 显式排除 `.env` 与 `*.db`。镜像层一旦构建就无法撤销，
+任何拿到镜像的人都能读出里面的文件 —— 密钥烘进去等于泄露。
 
 ---
 
-## MVP 范围说明
+## 已知限制
 
-本项目严格按 PRD 的 MVP 边界实现。以下功能**刻意不做**，请勿视为缺陷：
-
-- 用户注册登录系统（单用户本地使用）
-- 多布局切换（左右分栏支持拖拽调整宽度，但不提供其他布局模式）
-- 游戏化激励（XP、徽章、连续打卡）
-- 日历同步、多端同步
-- 代码在线运行沙箱
-- PDF / 视频等多模态学习资料导入
-- 多智能体复杂编排
-- 项目收藏、搜索、历史对比
+| 限制 | 说明 |
+| --- | --- |
+| 单用户本地工具 | 无账号体系。演示模式用共享口令 + 访客隔离，不是完整多租户 |
+| 无数据库迁移 | 使用 `create_all`，**不会**给已有表加列。模型变更后需删库重建（有真实数据后应引入 Alembic） |
+| SQLite | 适合单用户/小范围试用。并发写入已开 WAL + busy_timeout |
+| 长请求同步返回 | 项目匹配 13–43s、任务拆解约 51s、复盘约 36s。没有流式输出，靠缓动进度条缓解等待焦虑 |
+| 前端包 1.5 MB（gzip 465 KB） | AntD 全量引入，未做按需加载与代码分割 |
+| 无前端单测 | 目前靠浏览器端到端验证 + TypeScript 类型系统兜底 |
 
 ---
 
-## 开源协议
+## License
 
-本项目基于 [MIT License](LICENSE) 开源，可自由使用、修改与商用，只需保留版权声明。
-
-所有依赖均为 **MIT 或 BSD-3-Clause** 等宽松协议，**不含任何 GPL/AGPL 等 copyleft 传染性协议**，
-可安全用于商业环境。
-
----
-
-## 致谢
-
-- [DeepSeek](https://platform.deepseek.com/) —— 提供本项目所需的模型能力
-- [GitHub REST API](https://docs.github.com/rest) —— 提供开源项目检索数据源
-- [FastAPI](https://fastapi.tiangolo.com/) · [React](https://react.dev/) · [Ant Design](https://ant.design/) —— 本项目赖以构建的基础设施
-
+[MIT](LICENSE) © 2026 zqyt05
