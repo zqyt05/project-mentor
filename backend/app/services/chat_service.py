@@ -25,7 +25,7 @@ from app.models import (
     Review,
     Task,
 )
-from app.schemas.chat import ChatAskResponse, ChatHistoryOut, MessageOut
+from app.schemas.chat import ChatSource, ChatAskResponse, ChatHistoryOut, MessageOut
 from app.services.llm_service import get_llm_service, render_prompt
 from app.services.project_service import build_project_context, get_project
 from app.utils.response import CODE_NOT_FOUND, BusinessError
@@ -223,9 +223,19 @@ async def ask(
     )
 
     system_prompt = render_prompt("chat_answer", context=context)
+
+    # ---- RAG：从项目的知识库里检索与问题相关的资料片段 ----
+    # 延迟导入：knowledge_service 与 chat_service 同属 services 包，
+    # 模块级导入会卷入包初始化顺序问题。
+    from app.services import knowledge_service
+
+    sources = knowledge_service.retrieve(db, project_id, question)
+    retrieval_text = knowledge_service.build_retrieval_context(sources)
+
     user_prompt = (
         f"## 本任务的历史对话\n{history_text}\n\n"
-        f"## 学习者当前的问题\n{question}"
+        + (f"{retrieval_text}\n\n" if retrieval_text else "")
+        + f"## 学习者当前的问题\n{question}"
     )
 
     llm = get_llm_service()
@@ -245,6 +255,15 @@ async def ask(
         messages=[
             MessageOut.model_validate(user_message),
             MessageOut.model_validate(assistant_message),
+        ],
+        sources=[
+            ChatSource(
+                filename=source.filename,
+                chunk_index=source.chunk_index,
+                score=round(source.score, 3),
+                snippet=source.content[:120],
+            )
+            for source in sources
         ],
     )
 

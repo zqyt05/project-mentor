@@ -9,8 +9,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, App, Button, Empty, Input, Spin, Tag, Typography } from 'antd'
-import { ClearOutlined, SendOutlined } from '@ant-design/icons'
+import { Alert, App, Button, Empty, Input, Space, Spin, Tag, Tooltip, Typography } from 'antd'
+import { ClearOutlined, FileTextOutlined, SendOutlined } from '@ant-design/icons'
 import { chatApi } from '@/api/chat'
 import MessageBubble from '@/components/MessageBubble'
 import { useAppStore } from '@/store/useAppStore'
@@ -34,6 +34,10 @@ export default function ChatPanel() {
   const resetChat = useAppStore((state) => state.resetChat)
 
   const [question, setQuestion] = useState('')
+  // 最近一次回答引用的资料出处（RAG）。只保留最新一条，避免历史消息堆叠引用。
+  const [sources, setSources] = useState<
+    { filename: string; chunk_index: number; score: number; snippet: string }[]
+  >([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -69,6 +73,7 @@ export default function ChatPanel() {
       .then((history) => {
         if (cancelled) return
         setMessages(history.messages)
+        setSources([])
         setQuickPrompts(history.quick_prompts)
       })
       .catch(() => {
@@ -235,6 +240,27 @@ export default function ChatPanel() {
             <div className="msg-bubble msg-bubble-assistant">
               <Spin size="small" /> <Text type="secondary">导师正在思考…</Text>
             </div>
+          </div>
+        )}
+
+        {/* RAG 引用出处：让用户知道这个回答依据了哪几份资料 */}
+        {!chatLoading && sources.length > 0 && (
+          <div className="chat-sources">
+            <Space size={6} style={{ marginBottom: 6 }}>
+              <FileTextOutlined style={{ color: 'var(--accent)' }} />
+              <Text style={{ fontSize: '0.76rem', fontWeight: 600 }}>
+                本次回答依据了 {sources.length} 份资料
+              </Text>
+            </Space>
+            {sources.map((source, index) => (
+              <Tooltip key={`${source.filename}-${source.chunk_index}`} title={source.snippet}>
+                <div className="chat-source-item">
+                  <span className="chat-source-index">资料{index + 1}</span>
+                  <span className="chat-source-name">{source.filename}</span>
+                  <span className="chat-source-score">相关度 {source.score}</span>
+                </div>
+              </Tooltip>
+            ))}
           </div>
         )}
       </div>

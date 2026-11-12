@@ -23,6 +23,7 @@ import MatchPage from '@/pages/MatchPage'
 import OverviewPage from '@/pages/OverviewPage'
 import TasksPage from '@/pages/TasksPage'
 import ReviewPage from '@/pages/ReviewPage'
+import KnowledgePage from '@/pages/KnowledgePage'
 import HistoryPage from '@/pages/HistoryPage'
 
 dayjs.locale('zh-cn')
@@ -126,6 +127,7 @@ export default function App() {
               <Route path="/project/:projectId" element={<Navigate to="overview" replace />} />
               <Route path="/project/:projectId/overview" element={<OverviewPage />} />
               <Route path="/project/:projectId/tasks" element={<TasksPage />} />
+              <Route path="/project/:projectId/knowledge" element={<KnowledgePage />} />
               <Route path="/project/:projectId/review" element={<ReviewPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

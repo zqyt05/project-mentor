@@ -19,3 +19,13 @@ langchain-openai==1.7.1
 
 # --- HTTP 客户端（GitHub REST API v3）---
 httpx==0.28.1
+
+# ===== 知识库（RAG）=====
+# 本地向量模型（ONNX，不依赖 torch）
+fastembed==0.9.1
+# PDF 解析
+pypdf==7.0.1
+# Word 解析
+python-docx==1.2.0
+# 文件上传
+python-multipart==0.0.33

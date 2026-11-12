@@ -24,6 +24,7 @@ import { projectApi } from '@/api/project'
 function resolveMainView(pathname: string): MainView {
   if (pathname.endsWith('/tasks')) return 'tasks'
   if (pathname.endsWith('/review')) return 'review'
+  if (pathname.endsWith('/knowledge')) return 'knowledge'
   return 'overview'
 }
 

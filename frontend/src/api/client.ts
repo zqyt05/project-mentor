@@ -50,9 +50,15 @@ const notifyError = (text: string) => {
  */
 export async function request<T>(config: AxiosRequestConfig, aiCall = false): Promise<T> {
   try {
+    const isFormData = typeof FormData !== 'undefined' && config.data instanceof FormData
     const response = await instance.request<ApiResponse<T>>({
       timeout: aiCall ? AI_TIMEOUT : DEFAULT_TIMEOUT,
       ...config,
+      // 上传文件时必须让浏览器自己生成带 boundary 的 Content-Type，
+      // 手写 'application/json' 会导致后端解析不出文件字段
+      headers: isFormData
+        ? { ...config.headers, 'Content-Type': undefined }
+        : config.headers,
     })
     const body = response.data
     // 门禁失效也走业务 code 通道（HTTP 已返回 401，这里做双保险）

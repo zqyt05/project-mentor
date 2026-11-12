@@ -1,0 +1,62 @@
+# ============================================================================
+# ProjectMentor 一键启动
+#
+# 用法：
+#   docker compose up -d --build      # 构建并后台启动
+#   docker compose logs -f            # 看日志
+#   docker compose down               # 停止（保留数据）
+#   docker compose down -v            # 停止并删除数据卷（会丢数据）
+#
+# 前置：backend/.env 里要有 DEEPSEEK_API_KEY；分享给他人时再加 DEMO_PASSWORD
+# ============================================================================
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: projectmentor:latest
+    container_name: projectmentor
+    restart: unless-stopped
+
+    ports:
+      # 只绑到本机回环：外网通过隧道/反向代理访问，不直接暴露 8000
+      - "127.0.0.1:8000:8000"
+
+    # 密钥从 .env 注入，不进入镜像
+    env_file:
+      - backend/.env
+
+    environment:
+      # 数据库落在卷里，容器重建不丢数据
+      DATABASE_URL: sqlite:////data/projectmentor.db
+      # 由后端同源托管前端产物（免 CORS）
+      SERVE_FRONTEND: "1"
+      # 时区：每日 AI 配额按本地自然日重置，容器默认 UTC 会导致
+      # 「今天额度用完了」与使用者的日历不一致
+      TZ: Asia/Shanghai
+
+    volumes:
+      - projectmentor-data:/data
+      # 模型已烘进镜像；这里再挂一个卷，让重建镜像时不必重新下载 91MB。
+      # 若镜像里的模型版本与卷里不一致，删除该卷即可（docker volume rm）。
+      - projectmentor-model:/app/model-cache
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import urllib.request, sys
+          sys.exit(0 if urllib.request.urlopen("http://127.0.0.1:8000/api/health", timeout=4).status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  projectmentor-data:
+    name: projectmentor-data
+  projectmentor-model:
+    name: projectmentor-model

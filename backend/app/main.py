@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api import auth, chat, project, review, task
+from app.api import auth, chat, knowledge, project, review, task
 from app.config import BASE_DIR, settings
 from app.database import init_db
 from app.services.github_service import get_github_service
@@ -76,6 +76,7 @@ app.include_router(auth.router)
 app.include_router(project.router)
 app.include_router(task.router)
 app.include_router(chat.router)
+app.include_router(knowledge.router)
 app.include_router(review.router)
 
 
