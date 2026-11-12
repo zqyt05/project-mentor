@@ -5,8 +5,7 @@
  * 用户输入方向并点击「开始匹配项目」后，才进入左右双窗口布局。
  *
  * 视觉要点：
- * - 标志性渐变出现在 CTA 按钮、标题强调词与步骤序号上
- * - 四步产品介绍用「渐变序号 + 箭头连接器」横向铺开，替代原先的大段说明
+ * - 标志性渐变出现在 CTA 按钮与标题强调词上
  * - 背景装饰（径向辉光 + 缓慢旋转的虚线环 + 浮动几何体）纯装饰、不拦截交互
  *
  * 功能约束（保持不变）：
@@ -31,14 +30,6 @@ const EXAMPLES: { label: string; difficulty: Difficulty }[] = [
   { label: '新媒体运营', difficulty: '入门' },
   { label: 'PPT 制作', difficulty: '入门' },
   { label: '机器学习实战', difficulty: '中级' },
-]
-
-/** 四步产品介绍：与「工作方式」保持同一套说法，描述精简到一行 */
-const STEPS = [
-  { name: '项目匹配', desc: '技术类检索 GitHub 项目，通用类由 AI 定制' },
-  { name: '任务拆解 + DDL', desc: '拆成 4–6 个阶段，带交付标准与截止日' },
-  { name: '双窗口答疑', desc: '右侧随时提问，自动绑定当前任务的上下文' },
-  { name: '费曼复盘', desc: '用自己的话讲一遍，AI 批错补漏并生成文档' },
 ]
 
 /** 进度条缓动上限：留出余量，避免长时间停在 100% 却还没完成 */
@@ -148,20 +139,8 @@ export default function HomePage() {
           </h1>
         </Reveal>
 
-        {/* 四步产品介绍：替代原先的大段说明文字 */}
-        <Reveal delay={1}>
-          <ol className="home-steps">
-            {STEPS.map((step, index) => (
-              <li className="home-step" key={step.name}>
-                <span className="home-step-index">{index + 1}</span>
-                <span className="home-step-name">{step.name}</span>
-                <span className="home-step-desc">{step.desc}</span>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
 
-        <Reveal delay={2} className="home-search-reveal">
+        <Reveal delay={1} className="home-search-reveal">
           <div className="home-search">
             <input
               className="home-search-input"
