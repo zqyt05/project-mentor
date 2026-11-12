@@ -8,7 +8,6 @@ import {
   CheckCircleOutlined,
   DashboardOutlined,
   UnorderedListOutlined,
-  BookOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAppStore, type MainView } from '@/store/useAppStore'
@@ -33,7 +32,6 @@ export default function SideMenu({ hasProject }: SideMenuProps) {
   const items: { key: MainView; icon: React.ReactNode; label: React.ReactNode }[] = [
     { key: 'overview', icon: <DashboardOutlined />, label: '项目总览' },
     { key: 'tasks', icon: <UnorderedListOutlined />, label: '任务列表' },
-    { key: 'knowledge', icon: <BookOutlined />, label: '项目资料' },
     {
       key: 'review',
       icon: <CheckCircleOutlined />,

@@ -62,18 +62,10 @@ COPY backend/app ./app
 # 前端产物：放在后端期望的位置（backend 的上一级 frontend/dist）
 COPY --from=frontend /build/dist /frontend/dist
 
-# 预下载知识库的向量模型（BAAI/bge-small-zh-v1.5，约 91MB）。
-# 烘进镜像让容器**自包含**：运行时不必联网，也就不会因为网络问题降级成关键词检索。
-# 注意构建阶段需要能访问 hf-mirror.com。
-ENV HF_ENDPOINT=https://hf-mirror.com \
-    KNOWLEDGE_MODEL_CACHE=/app/model-cache
-RUN python -c "from fastembed import TextEmbedding; \
-TextEmbedding(model_name='BAAI/bge-small-zh-v1.5', cache_dir='/app/model-cache')"
-
 # 数据目录：SQLite 落在这里，compose 把它挂成命名卷
 RUN mkdir -p /data \
     && useradd --create-home --uid 10001 appuser \
-    && chown -R appuser:appuser /app /data /frontend /app/model-cache
+    && chown -R appuser:appuser /app /data /frontend
 
 USER appuser
 

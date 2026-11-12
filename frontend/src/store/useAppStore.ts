@@ -10,7 +10,7 @@ import { create } from 'zustand'
 import type { ChatMessage, ProjectDetail, ProjectStatus } from '@/api/types'
 
 /** 左侧主窗口的页面分区 */
-export type MainView = 'overview' | 'tasks' | 'review' | 'knowledge'
+export type MainView = 'overview' | 'tasks' | 'review'
 
 interface AppState {
   // ===== 左侧主窗口状态 =====

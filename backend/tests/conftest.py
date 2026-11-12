@@ -11,7 +11,7 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -61,14 +61,6 @@ def db() -> Generator[Session, None, None]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-
-    # 与生产库保持一致：SQLite 默认不启用外键约束，
-    # 不开启会让级联删除等行为在测试与生产之间产生差异。
-    @event.listens_for(engine, "connect")
-    def _fk_pragma(dbapi_connection, _record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
     Base.metadata.create_all(bind=engine)
     test_session = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 

@@ -46,16 +46,6 @@ class ChatHistoryOut(BaseModel):
     quick_prompts: list[str] = Field(default_factory=list)
 
 
-class ChatSource(BaseModel):
-    """回答引用的资料出处。"""
-
-    filename: str
-    chunk_index: int
-    score: float
-    # 片段摘要：让前端能展示「引用了哪一段」，而不只是文件名
-    snippet: str
-
-
 class ChatAskResponse(BaseModel):
     """答疑响应。"""
 
@@ -63,5 +53,3 @@ class ChatAskResponse(BaseModel):
     task_id: int | None = None
     answer: str
     messages: list[MessageOut] = Field(default_factory=list)
-    # RAG 检索到的资料出处；未上传资料或未命中时为空
-    sources: list[ChatSource] = Field(default_factory=list)

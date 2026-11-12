@@ -38,9 +38,6 @@ services:
 
     volumes:
       - projectmentor-data:/data
-      # 模型已烘进镜像；这里再挂一个卷，让重建镜像时不必重新下载 91MB。
-      # 若镜像里的模型版本与卷里不一致，删除该卷即可（docker volume rm）。
-      - projectmentor-model:/app/model-cache
 
     healthcheck:
       test:
@@ -58,5 +55,3 @@ services:
 volumes:
   projectmentor-data:
     name: projectmentor-data
-  projectmentor-model:
-    name: projectmentor-model
