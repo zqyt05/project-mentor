@@ -17,7 +17,6 @@
 - [技术栈](#技术栈)
 - [快速启动](#快速启动)
 - [项目结构](#项目结构)
-- [开发与测试](#开发与测试)
 - [几个关键的工程决策](#几个关键的工程决策)
 - [已知限制](#已知限制)
 - [License](#license)
@@ -140,7 +139,7 @@ ProjectMentor 想复刻的是**企业里导师带新人的方式**：直接给�
 
 ## 快速启动
 
-### 方式一：本地开发（改代码时用）
+### 方式一：本地开发
 
 ```bash
 # 准备配置
@@ -167,17 +166,6 @@ docker compose down              # 停止（保留数据卷）
 ```
 
 打开 <http://127.0.0.1:8000>
-
-容器特性：
-
-- 前后端**同源**（后端托管前端产物），零 CORS 配置
-- SQLite 落在命名卷 `projectmentor-data`，容器重建不丢数据
-- **非 root 运行**（uid 10001）
-- 镜像内**不含 `.env` 与数据库**（密钥通过环境变量注入，避免烘进镜像层）
-- 内置健康检查
-
-> macOS 若提示 `docker: command not found`，把 CLI 加进 PATH：
-> `echo 'export PATH="$HOME/.docker/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc`
 
 
 ## 项目结构
@@ -220,24 +208,6 @@ ProjectMentor/
 └── .github/workflows/ci.yml
 ```
 
----
-
-## 开发与测试
-
-```bash
-# 后端：静态检查 + 单测
-cd backend
-./.venv/bin/python -m flake8 app/ tests/
-./.venv/bin/python -m pytest
-
-# 前端：类型检查 + Lint + 构建
-cd frontend
-./node_modules/.bin/tsc --noEmit
-./node_modules/.bin/eslint . --ext ts,tsx
-./node_modules/.bin/vite build
-```
-
----
 
 ---
 
