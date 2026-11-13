@@ -107,7 +107,6 @@ ProjectMentor 想复刻的是**企业里导师带新人的方式**：直接给�
 
 ## 界面预览
 
-> 截图位于 [`docs/screenshots/`](docs/screenshots/)
 
 | 首页：极简搜索 | 项目总览 |
 | --- | --- |
