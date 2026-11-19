@@ -38,7 +38,11 @@ PORT="${PORT:-8000}"
 # 而环境变量的优先级高于 .env，结果反而把 .env 里配好的口令覆盖成空，
 # 门禁静默关闭。因此这里只在命令行确实传了值时才 export。
 if [[ -z "${DEMO_PASSWORD:-}" ]]; then
-  DEMO_PASSWORD="$(grep -E '^DEMO_PASSWORD=' "$ROOT/backend/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r' | sed 's/^["'"'"']//; s/["'"'"']$//')"
+  # 注意末尾的 `|| true`：脚本开了 set -euo pipefail，
+  # 而 .env 里没有 DEMO_PASSWORD 时 grep 返回 1 —— 配合 pipefail 会让
+  # 整个赋值语句失败，进而让脚本**静默退出**（不打印任何信息）。
+  # 这正好是「关闭门禁」这条路径，曾经因此完全跑不起来。
+  DEMO_PASSWORD="$(grep -E '^DEMO_PASSWORD=' "$ROOT/backend/.env" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '\r' | sed 's/^["'"'"']//; s/["'"'"']$//')" || true
   if [[ -n "$DEMO_PASSWORD" ]]; then
     echo "🔐 演示门禁：从 backend/.env 读取到口令"
   fi
