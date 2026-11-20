@@ -133,38 +133,6 @@ ProjectMentor 想复刻的是**企业里导师带新人的方式**：直接给�
 | 环境管理 | pydantic-settings | 敏感信息全部走环境变量，禁止硬编码 |
 
 ---
-
-## 快速启动
-
-### 方式一：本地开发
-
-```bash
-# 准备配置
-cp backend/.env.example backend/.env
-# 编辑 backend/.env，填入 DEEPSEEK_API_KEY（必填）与 GITHUB_TOKEN（可选）
-
-# 终端 1：后端（首次运行自动建表）
-./scripts/start-backend.sh
-
-# 终端 2：前端
-./scripts/start-frontend.sh
-```
-
-打开 <http://127.0.0.1:5173>
-
-依赖环境：Python 3.11、Node ≥ 22.13、pnpm。
-
-### 方式二：Docker
-
-```bash
-docker compose up -d --build     # 构建并后台启动
-docker compose logs -f           # 看日志
-docker compose down              # 停止（保留数据卷）
-```
-
-打开 <http://127.0.0.1:8000>
-
-
 ## 项目结构
 
 ```
@@ -204,20 +172,6 @@ ProjectMentor/
 ├── Dockerfile / docker-compose.yml
 └── .github/workflows/ci.yml
 ```
-
-
----
-
-## 已知限制
-
-| 限制 | 说明 |
-| --- | --- |
-| 单用户本地工具 | 无账号体系。演示模式用共享口令 + 访客隔离，不是完整多租户 |
-| 无数据库迁移 | 使用 `create_all`，**不会**给已有表加列。模型变更后需删库重建（有真实数据后应引入 Alembic） |
-| SQLite | 适合单用户/小范围试用。并发写入已开 WAL + busy_timeout |
-| 长请求同步返回 | 项目匹配 13–43s、任务拆解约 51s、复盘约 36s。没有流式输出，靠缓动进度条缓解等待焦虑 |
-| 前端包 1.5 MB（gzip 465 KB） | AntD 全量引入，未做按需加载与代码分割 |
-| 无前端单测 | 目前靠浏览器端到端验证 + TypeScript 类型系统兜底 |
 
 ---
 
