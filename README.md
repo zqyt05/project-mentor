@@ -10,6 +10,16 @@
 
 ---
 
+## 产品演示
+
+[![点击播放 ProjectMentor 产品演示](docs/screenshots/video-cover.png)](https://www.bilibili.com/video/BV1sqs86dENY)
+
+**▶ [观看完整演示（5 分 32 秒）](https://www.bilibili.com/video/BV1sqs86dENY)**
+
+一次完整流程：输入学习方向 → 双路径匹配 → 任务拆解与 DDL → 双窗口答疑 → 费曼复盘生成可展示文档。
+
+---
+
 ## 解决什么问题
 
 在校学生和转行者学技术时，普遍卡在同一个地方：**看完了教程，但做不出东西**。
